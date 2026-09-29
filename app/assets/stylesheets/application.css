@@ -628,6 +628,47 @@ textarea {
   color: #b7d1bb;
 }
 
+.import-result-completed {
+  border-color: #45604a;
+  background: #1d2b20;
+  color: #b7d1bb;
+}
+
+.import-result-completed strong {
+  color: #b7d1bb;
+}
+
+.import-result-failed {
+  border-color: #704b43;
+  background: #2b1e1b;
+  color: #e3b0a7;
+}
+
+.import-result-failed strong {
+  color: #e3b0a7;
+}
+
+.import-result-importing,
+.import-result-pending {
+  border-color: #6f6040;
+  background: #282419;
+  color: #e2c987;
+}
+
+.import-result-importing strong,
+.import-result-pending strong {
+  color: #f0d99b;
+}
+
+.import-rejected-table td {
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.import-rejected-table {
+  white-space: normal;
+}
+
 .preview-summary-list .meta-row {
   grid-template-columns: 180px 1fr;
 }

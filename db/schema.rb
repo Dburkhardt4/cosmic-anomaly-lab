@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_152000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -61,6 +61,40 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_120000) do
     t.index ["source_file_id"], name: "index_field_mappings_on_source_file_id"
   end
 
+  create_table "import_runs", force: :cascade do |t|
+    t.integer "source_file_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.integer "rows_read", default: 0, null: false
+    t.integer "rows_imported", default: 0, null: false
+    t.integer "rows_rejected", default: 0, null: false
+    t.integer "warning_count", default: 0, null: false
+    t.integer "error_count", default: 0, null: false
+    t.string "importer_version", default: "1", null: false
+    t.text "failure_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.json "validation_issues", default: [], null: false
+    t.string "source_sha256"
+    t.bigint "source_byte_size"
+    t.index ["source_file_id"], name: "index_import_runs_on_source_file_id", unique: true
+  end
+
+  create_table "imported_source_records", force: :cascade do |t|
+    t.integer "source_file_id", null: false
+    t.integer "import_run_id", null: false
+    t.integer "source_row_number", null: false
+    t.json "original_row_payload", null: false
+    t.string "payload_hash", null: false
+    t.string "status", default: "accepted", null: false
+    t.json "validation_issues", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["import_run_id"], name: "index_imported_source_records_on_import_run_id"
+    t.index ["source_file_id", "source_row_number"], name: "index_imported_source_records_on_source_file_and_row", unique: true
+  end
+
   create_table "normalized_concepts", force: :cascade do |t|
     t.string "key", null: false
     t.string "name", null: false
@@ -71,6 +105,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["key"], name: "index_normalized_concepts_on_key", unique: true
+  end
+
+  create_table "normalized_records", force: :cascade do |t|
+    t.integer "imported_source_record_id", null: false
+    t.string "record_type", default: "generic", null: false
+    t.json "normalized_values", null: false
+    t.json "unmapped_values", null: false
+    t.json "field_mapping_snapshot", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["imported_source_record_id"], name: "index_normalized_records_on_imported_source_record_id", unique: true
   end
 
   create_table "source_files", force: :cascade do |t|
@@ -88,5 +133,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_120000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "field_mappings", "normalized_concepts"
   add_foreign_key "field_mappings", "source_files"
+  add_foreign_key "import_runs", "source_files"
+  add_foreign_key "imported_source_records", "import_runs"
+  add_foreign_key "imported_source_records", "source_files"
+  add_foreign_key "normalized_records", "imported_source_records"
   add_foreign_key "source_files", "datasets"
 end

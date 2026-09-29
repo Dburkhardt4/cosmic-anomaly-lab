@@ -1,6 +1,9 @@
 class SourceFile < ApplicationRecord
   belongs_to :dataset
   has_many :field_mappings, dependent: :destroy
+  has_many :import_runs, dependent: :destroy
+  has_many :imported_source_records, dependent: :destroy
+  has_many :normalized_records, through: :imported_source_records
 
   has_one_attached :file
 

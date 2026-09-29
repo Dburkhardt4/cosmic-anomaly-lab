@@ -1,6 +1,6 @@
 # Cosmic Anomaly Lab
 
-Cosmic Anomaly Lab is a local-first Rails research workbench for cataloging processed scientific datasets and preserving their source context. The current workflow supports read-only CSV source attachment, structural inspection, explicit field mapping from source-specific columns to a small set of reusable concepts, and a read-only import preview. Field mapping records a possible relationship for future normalization, while the preview validates and displays source values without importing or transforming records. Persistent import and normalization are not implemented yet.
+Cosmic Anomaly Lab is a local-first Rails research workbench for cataloging processed scientific datasets and preserving their source context. The current workflow supports CSV source attachment, structural inspection, explicit field mapping from source-specific columns to a small set of reusable concepts, a read-only import preview, and persistent import into generic source-linked records. Imported records preserve the complete original row payload, source-row linkage, and mapping snapshot; no unit conversion or automatic scientific interpretation is performed.
 
 ## Requirements
 

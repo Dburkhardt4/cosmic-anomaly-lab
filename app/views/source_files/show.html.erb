@@ -5,25 +5,42 @@
     <div>
       <p class="eyebrow">Dataset / <%= @dataset.id %> / Source inspection</p>
       <h1><%= @source_file.original_filename %></h1>
-      <p class="heading-note">Read-only structural inspection for source data. You may record explicit field mappings, but this file has not been imported or normalized.</p>
+      <p class="heading-note">
+        Read-only structural inspection for source data.
+        <% if @import_run&.completed? %>
+          Imported records remain linked to this unchanged source file.
+        <% else %>
+          You may record explicit field mappings before importing generic records.
+        <% end %>
+      </p>
     </div>
     <div class="form-actions">
       <%= link_to "Back to dataset", @dataset, class: "button button-quiet" %>
       <%= link_to "Map fields", edit_dataset_source_file_field_mapping_path(@dataset, @source_file), class: "button button-primary" %>
+      <% if @import_run %>
+        <%= link_to "View import result", dataset_source_file_import_run_path(@dataset, @source_file, @import_run), class: "button button-quiet" %>
+      <% end %>
     </div>
   </header>
 
   <div class="dataset-layout source-inspection-layout">
     <section class="dataset-main" aria-labelledby="inspection-heading">
       <div class="inspection-banner" role="status">
-        <strong>Source data only</strong>
-        <span>Values are shown as received. This file has not been imported or normalized; field mappings are explicit labels only and do not infer units or scientific meaning.</span>
+        <strong><%= @import_run&.completed? ? "Source preserved after import" : "Source data only" %></strong>
+        <span>
+          Values are shown as received. Field mappings are explicit labels only and do not infer units or scientific meaning.
+          <% if @import_run&.completed? %>
+            Imported generic records remain traceable to their exact source rows.
+          <% else %>
+            The source file has not been imported or normalized yet.
+          <% end %>
+        </span>
       </div>
 
       <section aria-labelledby="inspection-heading">
         <div class="section-heading">
           <h2 id="inspection-heading">File integrity</h2>
-          <span class="state-tag">Not imported</span>
+          <span class="state-tag <%= "state-tag-ready" if @import_run&.completed? %>"><%= @import_run&.status || "not imported" %></span>
         </div>
 
         <dl class="meta-list inspection-meta-list">
@@ -45,7 +62,17 @@
           </div>
           <div class="meta-row">
             <dt>Processing state</dt>
-            <dd>Source attached; import not started</dd>
+            <dd>
+              <% if @import_run&.completed? %>
+                Import completed; source rows remain linked and unchanged.
+              <% elsif @import_run&.failed? %>
+                Import failed; no partial scientific records were retained.
+              <% elsif @import_run&.importing? %>
+                Import in progress.
+              <% else %>
+                Source attached; import not started.
+              <% end %>
+            </dd>
           </div>
         </dl>
       </section>
@@ -151,11 +178,17 @@
         </div>
         <div class="meta-row">
           <dt>Source status</dt>
-          <dd>Attached locally for inspection</dd>
+          <dd><%= @import_run&.completed? ? "Attached locally; imported records preserve provenance" : "Attached locally for inspection" %></dd>
         </div>
         <div class="meta-row">
           <dt>Next step</dt>
-          <dd><%= link_to "Review explicit field mappings", edit_dataset_source_file_field_mapping_path(@dataset, @source_file), class: "inspector-link" %></dd>
+          <dd>
+            <% if @import_run %>
+              <%= link_to "View import result", dataset_source_file_import_run_path(@dataset, @source_file, @import_run), class: "inspector-link" %>
+            <% else %>
+              <%= link_to "Review explicit field mappings", edit_dataset_source_file_field_mapping_path(@dataset, @source_file), class: "inspector-link" %>
+            <% end %>
+          </dd>
         </div>
       </dl>
     </aside>

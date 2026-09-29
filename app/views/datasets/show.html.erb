@@ -51,13 +51,13 @@
       <section class="source-files-panel" aria-labelledby="source-files-heading">
         <div class="section-heading">
           <div>
-            <p class="section-label">Read-only staging</p>
-            <h2 id="source-files-heading">Source files</h2>
+            <p class="section-label">Source workflow</p>
+            <h2 id="source-files-heading">Inspect, map, and import source files</h2>
           </div>
-          <span class="state-tag">Not imported</span>
+          <span class="state-tag">Source staging</span>
         </div>
 
-        <p class="section-note">Attach a CSV to inspect its structure before any field mapping, normalization, or scientific interpretation.</p>
+        <p class="section-note">Attach a CSV to inspect its structure, map columns explicitly, preview the import, and persist generic source-linked records without changing the original file.</p>
 
         <% if @source_file.errors.any? %>
           <div class="error-summary" role="alert" tabindex="-1">
@@ -99,7 +99,8 @@
                   <tr>
                     <td class="mono"><%= source_file.original_filename %></td>
                     <td class="mono muted"><%= number_with_delimiter(source_file.byte_size) %> bytes</td>
-                    <td><span class="state-tag">Source only</span></td>
+                    <% import_run = source_file.import_runs.first %>
+                    <td><span class="state-tag <%= "state-tag-ready" if import_run&.completed? %>"><%= import_run&.status || "source only" %></span></td>
                     <td class="mono muted"><%= source_file.created_at.to_date.to_fs(:iso8601) %></td>
                     <td><%= link_to "Inspect", [@dataset, source_file], class: "dataset-link" %></td>
                   </tr>

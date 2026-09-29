@@ -206,6 +206,71 @@ class DatasetsFlowTest < ActionDispatch::IntegrationTest
     assert_select ".preview-values-table", text: /Right Ascension/
   end
 
+  test "imports previewed rows with source provenance and protects retries" do
+    dataset = Dataset.create!(name: "Persistent import catalog")
+    contents = File.binread(Rails.root.join("test/fixtures/files/source_catalog.csv"))
+    post dataset_source_files_path(dataset), params: {
+      source_file: {
+        file: fixture_file_upload("source_catalog.csv", "text/csv")
+      }
+    }
+    source_file = SourceFile.order(:created_at).last
+    right_ascension = NormalizedConcept.create!(
+      key: "right_ascension_persistent_flow_test",
+      name: "Right Ascension",
+      description: "An angular coordinate.",
+      expected_value_type: "number",
+      canonical_unit: "degree"
+    )
+
+    get edit_dataset_source_file_field_mapping_path(dataset, source_file)
+    patch dataset_source_file_field_mapping_path(dataset, source_file), params: {
+      field_mappings: {
+        "0" => right_ascension.id,
+        "1" => "",
+        "2" => ""
+      }
+    }
+
+    get dataset_source_file_import_preview_path(dataset, source_file)
+    assert_response :success
+    assert_select "form[action='#{dataset_source_file_import_path(dataset, source_file)}'] input[type='submit']", value: /Import source rows/
+
+    assert_difference("ImportRun.count", 1) do
+      assert_difference("ImportedSourceRecord.count", 3) do
+        assert_difference("NormalizedRecord.count", 3) do
+          post dataset_source_file_import_path(dataset, source_file)
+        end
+      end
+    end
+
+    import_run = ImportRun.order(:created_at).last
+    assert_redirected_to dataset_source_file_import_run_path(dataset, source_file, import_run)
+    follow_redirect!
+    assert_response :success
+    assert_select "h1", "Import result"
+    assert_select ".import-result-completed", text: /accepted source rows/i
+    assert_select ".preview-summary-list", text: /3/
+
+    source_record = source_file.reload.imported_source_records.find_by!(source_row_number: 1)
+    assert_equal dataset, source_record.source_file.dataset
+    assert_equal [ "A-1", "12,3", "good" ], source_record.original_row_payload["values"]
+    assert_equal right_ascension.key, source_record.normalized_record.normalized_values.first["concept_key"]
+    assert_equal contents, source_file.file.download
+
+    assert_no_difference([ "ImportRun.count", "ImportedSourceRecord.count", "NormalizedRecord.count" ]) do
+      post dataset_source_file_import_path(dataset, source_file)
+    end
+
+    assert_redirected_to dataset_source_file_import_run_path(dataset, source_file, import_run)
+    assert_equal 3, source_file.reload.imported_source_records.count
+
+    get dataset_source_file_path(dataset, source_file)
+    assert_response :success
+    assert_select ".inspection-banner", text: /traceable to their exact source rows/i
+    assert_select "a", text: "View import result"
+  end
+
   test "does not save mappings for duplicate source column names" do
     dataset = Dataset.create!(name: "Duplicate header catalog")
     post dataset_source_files_path(dataset), params: {

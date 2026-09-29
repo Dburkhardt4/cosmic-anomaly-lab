@@ -14,6 +14,7 @@ class SourceFilesController < ApplicationController
 
   def show
     @source_file = @dataset.source_files.find(params[:id])
+    @import_run = @source_file.import_runs.first
     @inspection = SourceFileInspector.new(@source_file).call
   rescue SourceFileInspector::Error => error
     redirect_to @dataset, alert: error.message

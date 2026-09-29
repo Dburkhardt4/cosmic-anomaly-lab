@@ -58,6 +58,7 @@ class FieldMappingsController < ApplicationController
 
   def load_mapping_context
     @inspection = SourceFileInspector.new(@source_file).call
+    @import_run = @source_file.import_runs.first
     @normalized_concepts = NormalizedConcept.order(:name)
     @field_mappings_by_column = @source_file.field_mappings.includes(:normalized_concept).index_by(&:source_column_name)
   end

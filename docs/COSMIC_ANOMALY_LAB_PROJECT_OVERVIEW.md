@@ -6,7 +6,7 @@
 
 The application is intended to help a user explore scientific data without requiring deep prior expertise in astronomy, astrophysics, or the structure of every individual dataset.
 
-The current workflow attaches and inspects CSV source files, then lets the user record explicit field mappings to a small reusable vocabulary and review a read-only import preview. These mappings describe how source-specific columns may later relate to common concepts; the preview validates and displays source values but does not import rows or normalize values. Persistent import and normalization remain future work.
+The current workflow attaches and inspects CSV source files, then lets the user record explicit field mappings to a small reusable vocabulary, review a read-only import preview, and persist generic source-linked records. These mappings describe how source-specific columns may relate to common concepts; import preserves the complete original row payload and provenance but does not convert units or infer scientific meaning automatically.
 
 Its core purpose is to make it easier to:
 
@@ -121,7 +121,11 @@ The mapping records a possible relationship for later normalization. It does not
 
 The user can then open an import preview to review a limited set of original source rows, mapped concepts, unmapped values, and validation issues. This is a dry run only; it does not commit an import or normalize records.
 
-### 5. Understand unfamiliar terminology
+### 5. Import validated source rows
+
+After reviewing the preview, the user can explicitly persist accepted rows as generic normalized records. Each imported record links to its `SourceFile`, exact source row number, complete original row payload, source-file checksum, and a snapshot of the saved field mappings. Repeating a completed import is idempotent and does not create duplicate records.
+
+### 6. Understand unfamiliar terminology
 
 Scientific concepts and fields should be explainable directly inside the application.
 
@@ -135,7 +139,7 @@ Explanations may eventually support levels such as:
 
 The application should explain not only what a measurement means, but also common interpretation mistakes where relevant.
 
-### 6. Validate the import
+### 7. Validate the import
 
 Before data is committed, the application checks for issues such as:
 
@@ -150,7 +154,7 @@ Before data is committed, the application checks for issues such as:
 
 The user reviews warnings and decides whether to proceed.
 
-### 7. Normalize and store the records
+### 8. Normalize and store the records
 
 Imported records are stored using the common internal schema.
 
@@ -168,7 +172,7 @@ The system also preserves:
 
 Normalization must never destroy the ability to reconstruct where a value came from.
 
-### 8. Explore the data
+### 9. Explore the data
 
 The user can browse, search, filter, and inspect imported records.
 
@@ -185,13 +189,13 @@ Examples include filtering by:
 
 Each record should make its provenance and definitions easily accessible.
 
-### 9. Import additional datasets
+### 10. Import additional datasets
 
 The user repeats the import process for other scientific datasets.
 
 Because each dataset is translated into the same internal concepts, observations from unrelated sources can eventually be compared consistently.
 
-### 10. Compare datasets
+### 11. Compare datasets
 
 Cosmic Anomaly Lab helps identify potentially related records based on information such as:
 
@@ -205,7 +209,7 @@ Cosmic Anomaly Lab helps identify potentially related records based on informati
 
 Potential relationships should be presented as candidates for investigation rather than unquestionable matches.
 
-### 11. Flag interesting cases
+### 12. Flag interesting cases
 
 When something appears unusual, inconsistent, or worth revisiting, the user can create an investigation.
 
@@ -219,7 +223,7 @@ A case may be created because of:
 - possible data-quality problems;
 - unexplained behavior.
 
-### 12. Investigate systematically
+### 13. Investigate systematically
 
 An investigation acts as a research notebook for a particular case.
 

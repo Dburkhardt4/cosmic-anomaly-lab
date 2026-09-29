@@ -6,7 +6,7 @@ class DatasetsController < ApplicationController
   end
 
   def show
-    @source_files = @dataset.source_files.order(created_at: :desc)
+    @source_files = @dataset.source_files.includes(:import_runs).order(created_at: :desc)
     @source_file = @dataset.source_files.build
   end
 

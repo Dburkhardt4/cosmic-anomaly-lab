@@ -1,15 +1,37 @@
 <% content_for :title, "Import preview · #{@source_file.original_filename} · #{@dataset.name} · Cosmic Anomaly Lab" %>
 <% summary = @preview[:summary] %>
+<% import_allowed = @preview[:issues].none?(&:error?) && !@import_run&.completed? && !@import_run&.importing? %>
+<% row_errors_present = @preview[:rows].any? { |row| row[:issues].any?(&:error?) } %>
+<% import_label = row_errors_present ? "Import accepted rows" : "Import source rows" %>
+<% import_confirmation = row_errors_present ? "Some preview rows have errors and will be retained as rejected source records. Import the remaining accepted rows?" : "Import the validated source rows into persistent generic records?" %>
 
 <main class="workspace">
   <header class="page-heading">
     <div>
       <p class="eyebrow">Dataset / <%= @dataset.id %> / Import preview</p>
       <h1>Import preview</h1>
-      <p class="heading-note">A bounded dry run showing how the saved field mappings would interpret source rows. No scientific records are created.</p>
+      <p class="heading-note">
+        A bounded dry run showing how the saved field mappings would interpret source rows.
+        <% if @import_run&.completed? %>
+          This source has already been imported; the result remains linked to the original rows.
+        <% else %>
+          No scientific records are created until you explicitly import.
+        <% end %>
+      </p>
     </div>
     <div class="form-actions">
       <%= link_to "Back to mappings", edit_dataset_source_file_field_mapping_path(@dataset, @source_file), class: "button button-quiet" %>
+      <% if @import_run&.completed? %>
+        <%= link_to "View import result", dataset_source_file_import_run_path(@dataset, @source_file, @import_run), class: "button button-primary" %>
+      <% elsif import_allowed %>
+        <%= form_with url: dataset_source_file_import_path(@dataset, @source_file), method: :post do |form| %>
+          <%= form.submit import_label, class: "button button-primary", data: { turbo_confirm: import_confirmation } %>
+        <% end %>
+      <% elsif @import_run&.importing? %>
+        <span class="state-tag state-tag-warning">Import in progress</span>
+      <% else %>
+        <span class="state-tag state-tag-error">Resolve blocking errors to import</span>
+      <% end %>
     </div>
   </header>
 
@@ -23,7 +45,7 @@
       <section aria-labelledby="preview-heading">
         <div class="section-heading">
           <h2 id="preview-heading">Preview summary</h2>
-          <span class="state-tag state-tag-ready">No records written</span>
+          <span class="state-tag <%= @import_run&.completed? ? "state-tag-ready" : "state-tag-warning" %>"><%= @import_run&.completed? ? "Records imported" : "No records written" %></span>
         </div>
 
         <dl class="meta-list preview-summary-list">
@@ -223,8 +245,14 @@
           <dd>Attached locally; source values preserved</dd>
         </div>
         <div class="meta-row">
-          <dt>Next step</dt>
-          <dd>Persistent import is not implemented.</dd>
+          <dt>Import state</dt>
+          <dd>
+            <% if @import_run&.completed? %>
+              <%= link_to "Review import result", dataset_source_file_import_run_path(@dataset, @source_file, @import_run), class: "inspector-link" %>
+            <% else %>
+              <%= import_allowed ? "Ready to persist generic source-linked records" : "Blocked until file-level errors are resolved" %>
+            <% end %>
+          </dd>
         </div>
       </dl>
     </aside>

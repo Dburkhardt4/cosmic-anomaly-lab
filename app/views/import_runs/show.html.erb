@@ -1,0 +1,149 @@
+<% content_for :title, "Import result · #{@source_file.original_filename} · #{@dataset.name} · Cosmic Anomaly Lab" %>
+<% result_state_class = if @import_run.completed?
+  "state-tag-ready"
+elsif @import_run.failed?
+  "state-tag-error"
+else
+  "state-tag-warning"
+end %>
+
+<main class="workspace">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Dataset / <%= @dataset.id %> / Import result</p>
+      <h1>Import result</h1>
+      <p class="heading-note">The import run records generic source-linked records without changing the uploaded CSV.</p>
+    </div>
+    <div class="form-actions">
+      <%= link_to "Back to source file", [@dataset, @source_file], class: "button button-quiet" %>
+      <%= link_to "View preview", dataset_source_file_import_preview_path(@dataset, @source_file), class: "button button-primary" %>
+    </div>
+  </header>
+
+  <div class="dataset-layout source-inspection-layout">
+    <section class="dataset-main" aria-labelledby="import-result-heading">
+      <div class="inspection-banner import-result-banner import-result-<%= @import_run.status %>" role="status">
+        <strong><%= @import_run.status %></strong>
+        <span>
+          <% if @import_run.completed? %>
+            Accepted source rows are now persisted as generic normalized records.
+          <% elsif @import_run.failed? %>
+            No partial scientific import was left behind after this run failed.
+          <% else %>
+            This import run is still in progress.
+          <% end %>
+        </span>
+      </div>
+
+      <section aria-labelledby="import-result-heading">
+        <div class="section-heading">
+          <h2 id="import-result-heading">Run summary</h2>
+          <span class="state-tag <%= result_state_class %>"><%= @import_run.status %></span>
+        </div>
+
+        <dl class="meta-list preview-summary-list">
+          <div class="meta-row">
+            <dt>Source file</dt>
+            <dd class="mono"><%= @source_file.original_filename %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Rows read</dt>
+            <dd class="mono"><%= number_with_delimiter(@import_run.rows_read) %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Rows imported</dt>
+            <dd class="mono"><%= number_with_delimiter(@import_run.rows_imported) %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Rows rejected</dt>
+            <dd class="mono"><%= number_with_delimiter(@import_run.rows_rejected) %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Warnings</dt>
+            <dd class="mono"><%= number_with_delimiter(@import_run.warning_count) %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Errors</dt>
+            <dd class="mono"><%= number_with_delimiter(@import_run.error_count) %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Importer version</dt>
+            <dd class="mono"><%= @import_run.importer_version %></dd>
+          </div>
+        </dl>
+      </section>
+
+      <% if @import_run.failure_message.present? %>
+        <section class="inspection-section" aria-labelledby="import-failure-heading">
+          <div class="section-heading">
+            <h2 id="import-failure-heading">Failure detail</h2>
+            <span class="section-label">Blocking</span>
+          </div>
+          <div class="error-summary" role="alert"><%= @import_run.failure_message %></div>
+          <% if @import_run.validation_issues.any? %>
+            <ul class="preview-issue-list">
+              <% @import_run.validation_issues.each do |issue| %>
+                <li class="preview-issue preview-issue-error">
+                  <div class="preview-issue-heading">
+                    <span class="preview-severity"><%= issue["severity"] %></span>
+                    <span class="mono preview-issue-code"><%= issue["code"] %></span>
+                  </div>
+                  <p><%= issue["message"] %></p>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        </section>
+      <% end %>
+
+      <% if @rejected_records.any? %>
+        <section class="inspection-section" aria-labelledby="rejected-records-heading">
+          <div class="section-heading">
+            <h2 id="rejected-records-heading">Rejected source rows</h2>
+            <span class="section-label">First <%= @rejected_records.length %></span>
+          </div>
+          <div class="workbench-table-wrap">
+            <table class="workbench-table import-rejected-table">
+              <caption class="visually-hidden">Rejected source rows and validation issues</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Source row</th>
+                  <th scope="col">Issue</th>
+                  <th scope="col">Payload hash</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @rejected_records.each do |record| %>
+                  <tr>
+                    <td class="mono"><%= record.source_row_number %></td>
+                    <td><%= record.validation_issues.map { |issue| "#{issue["code"]}: #{issue["message"]}" }.to_sentence %></td>
+                    <td class="mono hash-value"><%= record.payload_hash %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      <% end %>
+    </section>
+
+    <aside class="inspector" aria-labelledby="provenance-heading">
+      <p class="inspector-label">Provenance</p>
+      <h2 id="provenance-heading">Source-linked records</h2>
+      <dl class="meta-list">
+        <div class="meta-row">
+          <dt>Dataset</dt>
+          <dd><%= link_to @dataset.name, @dataset, class: "inspector-link" %></dd>
+        </div>
+        <div class="meta-row">
+          <dt><%= @import_run.source_sha256.present? ? "Imported source SHA-256" : "Current source SHA-256" %></dt>
+          <dd class="mono hash-value"><%= @import_run.source_sha256.presence || @source_file.sha256 %></dd>
+        </div>
+        <div class="meta-row">
+          <dt>Traceability</dt>
+          <dd>Each accepted record links to its source row, complete payload, and saved mapping snapshot.</dd>
+        </div>
+      </dl>
+    </aside>
+  </div>
+</main>

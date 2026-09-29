@@ -3,6 +3,7 @@ class ImportPreviewsController < ApplicationController
   before_action :set_source_file
 
   def show
+    @import_run = @source_file.import_runs.first
     @preview = SourceFileImportPreview.call(source_file: @source_file)
   end
 

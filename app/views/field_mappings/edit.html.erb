@@ -5,7 +5,14 @@
     <div>
       <p class="eyebrow">Dataset / <%= @dataset.id %> / Field mapping</p>
       <h1>Map inspected fields</h1>
-      <p class="heading-note">Choose explicit relationships between source-specific columns and reusable concepts. Nothing is inferred, imported, renamed, or normalized.</p>
+      <p class="heading-note">
+        Choose explicit relationships between source-specific columns and reusable concepts.
+        <% if @import_run&.completed? %>
+          This source has been imported; existing generic records retain the mapping snapshot used at import time.
+        <% else %>
+          Nothing is inferred, imported, renamed, or normalized until you explicitly import from the preview.
+        <% end %>
+      </p>
     </div>
     <div class="form-actions">
       <%= link_to "Back to inspection", [@dataset, @source_file], class: "button button-quiet" %>
@@ -16,8 +23,15 @@
   <div class="dataset-layout source-inspection-layout">
     <section class="dataset-main" aria-labelledby="mapping-heading">
       <div class="inspection-banner" role="status">
-        <strong>Explicit mapping only</strong>
-        <span>A mapping records your decision about a source column. It does not import rows, transform values, convert units, or change the original CSV.</span>
+        <strong><%= @import_run&.completed? ? "Source already imported" : "Explicit mapping only" %></strong>
+        <span>
+          A mapping records your decision about a source column. It does not transform values, convert units, or change the original CSV.
+          <% if @import_run&.completed? %>
+            Existing records remain linked to the mapping snapshot captured during import.
+          <% else %>
+            Import occurs only after an explicit preview action.
+          <% end %>
+        </span>
       </div>
 
       <% if @source_file.errors.any? %>
