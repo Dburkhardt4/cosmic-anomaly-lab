@@ -1,0 +1,4 @@
+source_id,flux note,quality
+A-1,"12,3",good
+A-2,,unknown
+A-3,"value with ""quotes""",good

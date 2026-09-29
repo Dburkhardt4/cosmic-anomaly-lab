@@ -1,0 +1,13 @@
+<% content_for :title, "Edit #{@dataset.name} · Cosmic Anomaly Lab" %>
+
+<main class="workspace">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Dataset / <%= @dataset.id %> / Edit</p>
+      <h1>Edit dataset metadata</h1>
+      <p class="heading-note">Update the source record without changing its local identity.</p>
+    </div>
+  </header>
+
+  <%= render "form", dataset: @dataset %>
+</main>

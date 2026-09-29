@@ -1,0 +1,82 @@
+<% content_for :title, "Home · Cosmic Anomaly Lab" %>
+
+<main class="workspace">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Research console / Local collection</p>
+      <h1>Scientific datasets, kept understandable.</h1>
+      <p class="heading-note">Build a traceable local catalog of processed research data without losing its source context.</p>
+    </div>
+    <%= link_to "Register dataset", new_dataset_path, class: "button button-primary" %>
+  </header>
+
+  <div class="home-grid">
+    <section class="home-main" aria-labelledby="recent-datasets-heading">
+      <div class="section-heading">
+        <h2 id="recent-datasets-heading">Recent datasets</h2>
+        <%= link_to "View all", datasets_path, class: "button button-quiet" %>
+      </div>
+
+      <% if @datasets.any? %>
+        <div class="workbench-table-wrap">
+          <table class="workbench-table">
+            <thead>
+              <tr>
+                <th scope="col">Dataset</th>
+                <th scope="col">Source</th>
+                <th scope="col">Version</th>
+                <th scope="col">State</th>
+                <th scope="col">Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @datasets.each do |dataset| %>
+                <tr>
+                  <td><%= link_to dataset.name, dataset, class: "dataset-link" %></td>
+                  <td class="muted"><%= dataset.source_organization.presence || "—" %></td>
+                  <td class="mono muted"><%= dataset.version.presence || "—" %></td>
+                  <td><span class="state-tag state-tag-ready">Cataloged</span></td>
+                  <td class="mono muted"><%= dataset.updated_at.to_date.to_fs(:iso8601) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="empty-state">
+          <strong>No datasets cataloged</strong>
+          Register a source record to begin the local research collection.
+        </div>
+      <% end %>
+    </section>
+
+    <aside class="home-aside" aria-labelledby="workspace-status-heading">
+      <p class="section-label">Workspace status</p>
+      <h2 id="workspace-status-heading">Foundation active</h2>
+
+      <dl class="capability-list">
+        <div class="capability-row">
+          <dt>Storage</dt>
+          <dd><span class="state-tag state-tag-ready">Local SQLite</span></dd>
+        </div>
+        <div class="capability-row">
+          <dt>Datasets</dt>
+          <dd><%= pluralize(Dataset.count, "catalog record") %></dd>
+        </div>
+        <div class="capability-row">
+          <dt>Provenance</dt>
+          <dd>Source metadata retained</dd>
+        </div>
+        <div class="capability-row">
+          <dt>Import</dt>
+          <dd><span class="state-tag">Not configured</span></dd>
+        </div>
+      </dl>
+
+      <div class="research-note">
+        <p class="section-label">Working principle</p>
+        <p>Original scientific archives remain authoritative. CAL records enough source context to support careful, traceable research work.</p>
+      </div>
+    </aside>
+  </div>
+</main>

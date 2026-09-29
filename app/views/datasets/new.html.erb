@@ -1,0 +1,13 @@
+<% content_for :title, "New dataset · Cosmic Anomaly Lab" %>
+
+<main class="workspace">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Dataset registry / New record</p>
+      <h1>Register a dataset</h1>
+      <p class="heading-note">Record the source identity and context of a processed scientific dataset.</p>
+    </div>
+  </header>
+
+  <%= render "form", dataset: @dataset %>
+</main>

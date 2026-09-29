@@ -1,0 +1,53 @@
+<% content_for :title, "Datasets · Cosmic Anomaly Lab" %>
+
+<main class="workspace">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Local collection / Datasets</p>
+      <h1>Dataset registry</h1>
+      <p class="heading-note">Source-level metadata for processed scientific datasets in this workspace.</p>
+    </div>
+    <%= link_to "New dataset", new_dataset_path, class: "button button-primary" %>
+  </header>
+
+  <section class="dataset-main" aria-labelledby="dataset-table-heading">
+    <div class="section-heading">
+      <h2 id="dataset-table-heading"><%= pluralize(@datasets.size, "dataset") %></h2>
+      <span class="section-label">Ordered by recent activity</span>
+    </div>
+
+    <% if @datasets.any? %>
+      <div class="workbench-table-wrap">
+        <table class="workbench-table">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Source organization</th>
+              <th scope="col">Version</th>
+              <th scope="col">Source reference</th>
+              <th scope="col">Updated</th>
+              <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @datasets.each do |dataset| %>
+              <tr>
+                <td><%= link_to dataset.name, dataset, class: "dataset-link" %></td>
+                <td class="muted"><%= dataset.source_organization.presence || "—" %></td>
+                <td class="mono muted"><%= dataset.version.presence || "—" %></td>
+                <td class="muted"><%= dataset.source_url.present? ? "Available" : "Not recorded" %></td>
+                <td class="mono muted"><%= dataset.updated_at.to_date.to_fs(:iso8601) %></td>
+                <td><%= link_to "Edit", edit_dataset_path(dataset), class: "dataset-link" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="empty-state">
+        <strong>No datasets cataloged</strong>
+        Add a dataset to start preserving its identity and source context.
+      </div>
+    <% end %>
+  </section>
+</main>

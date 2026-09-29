@@ -1,0 +1,59 @@
+<div class="form-shell">
+  <section class="form-panel" aria-label="Dataset metadata form">
+    <%= form_with model: dataset do |form| %>
+      <% if dataset.errors.any? %>
+        <div class="error-summary" role="alert" tabindex="-1">
+          <h2><%= pluralize(dataset.errors.count, "issue") %> prevented this dataset from being saved</h2>
+          <ul>
+            <% dataset.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="field">
+        <%= form.label :name do %>
+          Dataset name <span class="required-marker" aria-hidden="true">*</span>
+        <% end %>
+        <%= form.text_field :name, required: true, autofocus: true, placeholder: "e.g. Survey data release or published catalog" %>
+        <p class="field-hint">Required. Use the source's recognizable dataset or catalog name.</p>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <%= form.label :source_organization %>
+          <%= form.text_field :source_organization, placeholder: "Archive, survey, or institution" %>
+        </div>
+
+        <div class="field">
+          <%= form.label :version %>
+          <%= form.text_field :version, placeholder: "Release, version, or edition" %>
+        </div>
+      </div>
+
+      <div class="field">
+        <%= form.label :source_url %>
+        <%= form.url_field :source_url, placeholder: "https://…" %>
+        <p class="field-hint">Link to the authoritative archive, catalog, or publication page.</p>
+      </div>
+
+      <div class="field">
+        <%= form.label :description %>
+        <%= form.text_area :description, placeholder: "Purpose, scope, processing level, and other source context…" %>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit dataset.persisted? ? "Save changes" : "Create dataset" %>
+        <%= link_to "Cancel", dataset.persisted? ? dataset_path(dataset) : datasets_path, class: "button button-quiet" %>
+      </div>
+    <% end %>
+  </section>
+
+  <aside class="form-aside" aria-labelledby="provenance-guidance-heading">
+    <p class="section-label">Provenance guidance</p>
+    <h2 id="provenance-guidance-heading">Keep the source recognizable</h2>
+    <p>Use labels from the originating archive or publication. This record is the durable context for future import and normalization work.</p>
+    <p>Attach a source file from the dataset record to inspect its structure. Field mapping and import remain intentionally outside this foundation.</p>
+  </aside>
+</div>

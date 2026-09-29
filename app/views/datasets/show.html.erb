@@ -1,0 +1,145 @@
+<% content_for :title, "#{@dataset.name} · Cosmic Anomaly Lab" %>
+
+<main class="workspace">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Dataset / <%= @dataset.id %></p>
+      <h1><%= @dataset.name %></h1>
+      <p class="heading-note"><%= @dataset.source_organization.presence || "Source organization not recorded" %></p>
+    </div>
+    <div class="form-actions">
+      <%= link_to "All datasets", datasets_path, class: "button button-quiet" %>
+      <%= link_to "Edit metadata", edit_dataset_path(@dataset), class: "button button-primary" %>
+    </div>
+  </header>
+
+  <div class="dataset-layout">
+    <section class="dataset-main" aria-labelledby="dataset-record-heading">
+      <div class="section-heading">
+        <h2 id="dataset-record-heading">Dataset record</h2>
+        <span class="state-tag state-tag-ready">Cataloged</span>
+      </div>
+
+      <div class="workbench-table-wrap">
+        <table class="workbench-table">
+          <thead>
+            <tr>
+              <th scope="col">Record type</th>
+              <th scope="col">Identifier</th>
+              <th scope="col">Version</th>
+              <th scope="col">Created</th>
+              <th scope="col">Last updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Dataset metadata</td>
+              <td class="mono muted">CAL-DS-<%= @dataset.id.to_s.rjust(4, "0") %></td>
+              <td class="mono muted"><%= @dataset.version.presence || "—" %></td>
+              <td class="mono muted"><%= @dataset.created_at.to_date.to_fs(:iso8601) %></td>
+              <td class="mono muted"><%= @dataset.updated_at.to_date.to_fs(:iso8601) %></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="description-block">
+        <p class="section-label">Description</p>
+        <p><%= @dataset.description.presence || "No description has been recorded for this dataset." %></p>
+      </div>
+
+      <section class="source-files-panel" aria-labelledby="source-files-heading">
+        <div class="section-heading">
+          <div>
+            <p class="section-label">Read-only staging</p>
+            <h2 id="source-files-heading">Source files</h2>
+          </div>
+          <span class="state-tag">Not imported</span>
+        </div>
+
+        <p class="section-note">Attach a CSV to inspect its structure before any field mapping, normalization, or scientific interpretation.</p>
+
+        <% if @source_file.errors.any? %>
+          <div class="error-summary" role="alert" tabindex="-1">
+            <h3>Source file could not be attached</h3>
+            <ul>
+              <% @source_file.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <%= form_with model: [@dataset, @source_file], url: dataset_source_files_path(@dataset), multipart: true do |form| %>
+          <div class="field">
+            <%= form.label :file, "CSV source file" %>
+            <%= form.file_field :file, accept: ".csv,text/csv", required: true %>
+            <p class="field-hint">CSV only. The original file is stored locally and inspected without rewriting it.</p>
+          </div>
+          <div class="form-actions">
+            <%= form.submit "Attach and inspect" %>
+          </div>
+        <% end %>
+
+        <% if @source_files.any? %>
+          <div class="workbench-table-wrap source-files-table-wrap">
+            <table class="workbench-table">
+              <caption class="visually-hidden">Attached source files</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Original filename</th>
+                  <th scope="col">Size</th>
+                  <th scope="col">State</th>
+                  <th scope="col">Attached</th>
+                  <th scope="col"><span class="visually-hidden">Action</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @source_files.each do |source_file| %>
+                  <tr>
+                    <td class="mono"><%= source_file.original_filename %></td>
+                    <td class="mono muted"><%= number_with_delimiter(source_file.byte_size) %> bytes</td>
+                    <td><span class="state-tag">Source only</span></td>
+                    <td class="mono muted"><%= source_file.created_at.to_date.to_fs(:iso8601) %></td>
+                    <td><%= link_to "Inspect", [@dataset, source_file], class: "dataset-link" %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <div class="empty-state source-files-empty">
+            <strong>No source files attached</strong>
+            Upload a CSV to begin structural inspection.
+          </div>
+        <% end %>
+      </section>
+    </section>
+
+    <aside class="inspector" aria-labelledby="source-inspector-heading">
+      <p class="inspector-label">Context inspector</p>
+      <h2 id="source-inspector-heading">Source details</h2>
+
+      <dl class="meta-list">
+        <div class="meta-row">
+          <dt>Organization</dt>
+          <dd><%= @dataset.source_organization.presence || "Not recorded" %></dd>
+        </div>
+        <div class="meta-row">
+          <dt>Version</dt>
+          <dd class="mono"><%= @dataset.version.presence || "Not recorded" %></dd>
+        </div>
+        <div class="meta-row">
+          <dt>Source URL</dt>
+          <dd>
+            <% if (source_url = safe_external_url(@dataset.source_url)) %>
+              <%= link_to @dataset.source_url, source_url, class: "inspector-link", target: "_blank", rel: "noopener noreferrer" %>
+            <% else %>
+              Not recorded
+            <% end %>
+          </dd>
+        </div>
+      </dl>
+    </aside>
+  </div>
+</main>

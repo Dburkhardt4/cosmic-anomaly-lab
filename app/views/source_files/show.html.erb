@@ -1,0 +1,162 @@
+<% content_for :title, "#{@source_file.original_filename} · #{@dataset.name} · Cosmic Anomaly Lab" %>
+
+<main class="workspace">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Dataset / <%= @dataset.id %> / Source inspection</p>
+      <h1><%= @source_file.original_filename %></h1>
+      <p class="heading-note">Read-only structural inspection for source data. This file has not been imported or normalized.</p>
+    </div>
+    <div class="form-actions">
+      <%= link_to "Back to dataset", @dataset, class: "button button-quiet" %>
+    </div>
+  </header>
+
+  <div class="dataset-layout source-inspection-layout">
+    <section class="dataset-main" aria-labelledby="inspection-heading">
+      <div class="inspection-banner" role="status">
+        <strong>Source data only</strong>
+        <span>Values are shown as received. This file has not been imported or normalized; no field mapping or unit inference has occurred.</span>
+      </div>
+
+      <section aria-labelledby="inspection-heading">
+        <div class="section-heading">
+          <h2 id="inspection-heading">File integrity</h2>
+          <span class="state-tag">Not imported</span>
+        </div>
+
+        <dl class="meta-list inspection-meta-list">
+          <div class="meta-row">
+            <dt>Original filename</dt>
+            <dd class="mono"><%= @source_file.original_filename %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>File size</dt>
+            <dd class="mono"><%= number_with_delimiter(@source_file.byte_size) %> bytes</dd>
+          </div>
+          <div class="meta-row">
+            <dt>SHA-256</dt>
+            <dd class="mono hash-value"><%= @source_file.sha256 %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Attached</dt>
+            <dd class="mono"><%= @source_file.created_at.to_fs(:iso8601) %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Processing state</dt>
+            <dd>Source attached; import not started</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="inspection-section" aria-labelledby="columns-heading">
+        <div class="section-heading">
+          <h2 id="columns-heading">Detected columns</h2>
+          <span class="section-label"><%= pluralize(@inspection[:columns].length, "column") %></span>
+        </div>
+
+        <div class="workbench-table-wrap">
+          <table class="workbench-table inspection-table">
+            <caption class="visually-hidden">Detected source columns and blank-value counts</caption>
+            <thead>
+              <tr>
+                <th scope="col">Position</th>
+                <th scope="col">Source column name</th>
+                <th scope="col">Blank values</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @inspection[:columns].each_with_index do |column, index| %>
+                <tr>
+                  <td class="mono muted"><%= index + 1 %></td>
+                  <td class="mono"><%= column.presence || "(blank source name)" %></td>
+                  <td class="mono"><%= number_with_delimiter(@inspection[:blank_counts][index]) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="inspection-section" aria-labelledby="sample-heading">
+        <div class="section-heading">
+          <h2 id="sample-heading">Sample records</h2>
+          <span class="section-label source-file-row-count"><%= number_with_delimiter(@inspection[:row_count]) %> total rows</span>
+        </div>
+
+        <% if @inspection[:sample_rows].any? %>
+          <% sample_width = [@inspection[:columns].length, @inspection[:sample_rows].map(&:length).max.to_i].max %>
+          <div class="workbench-table-wrap">
+            <table class="workbench-table inspection-table sample-table">
+              <caption class="visually-hidden">First <%= @inspection[:sample_rows].length %> source records</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Row</th>
+                  <% @inspection[:columns].each do |column| %>
+                    <th scope="col"><%= column.presence || "(blank source name)" %></th>
+                  <% end %>
+                  <% (sample_width - @inspection[:columns].length).times do %>
+                    <th scope="col" aria-label="Additional unnamed source value"></th>
+                  <% end %>
+                </tr>
+              </thead>
+              <tbody>
+                <% @inspection[:sample_rows].each_with_index do |row, row_index| %>
+                  <tr>
+                    <td class="mono muted"><%= row_index + 1 %></td>
+                    <% sample_width.times do |column_index| %>
+                      <% value = row[column_index] %>
+                      <td class="source-value" <%= "aria-label=\"blank value\"" if value.nil? || value == "" %>><%= value %></td>
+                    <% end %>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <div class="empty-state">
+            <strong>No data rows found</strong>
+            The source contains a header row but no records to sample.
+          </div>
+        <% end %>
+      </section>
+
+      <% if @inspection[:warnings].any? %>
+        <section class="inspection-section" aria-labelledby="warnings-heading">
+          <div class="section-heading">
+            <h2 id="warnings-heading">Structural warnings</h2>
+            <span class="state-tag state-tag-warning">Review</span>
+          </div>
+          <ul class="warning-list">
+            <% @inspection[:warnings].each do |warning| %>
+              <li><%= warning %></li>
+            <% end %>
+          </ul>
+        </section>
+      <% end %>
+    </section>
+
+    <aside class="inspector" aria-labelledby="source-context-heading">
+      <p class="inspector-label">Provenance context</p>
+      <h2 id="source-context-heading">Dataset</h2>
+      <dl class="meta-list">
+        <div class="meta-row">
+          <dt>Dataset</dt>
+          <dd><%= link_to @dataset.name, @dataset, class: "inspector-link" %></dd>
+        </div>
+        <div class="meta-row">
+          <dt>Organization</dt>
+          <dd><%= @dataset.source_organization.presence || "Not recorded" %></dd>
+        </div>
+        <div class="meta-row">
+          <dt>Source status</dt>
+          <dd>Attached locally for inspection</dd>
+        </div>
+        <div class="meta-row">
+          <dt>Next step</dt>
+          <dd>Field mapping is intentionally not available yet.</dd>
+        </div>
+      </dl>
+    </aside>
+  </div>
+</main>
