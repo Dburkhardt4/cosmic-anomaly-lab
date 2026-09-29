@@ -1,5 +1,3 @@
-require "digest"
-
 class SourceFileUploader
   SUPPORTED_CONTENT_TYPES = %w[
     application/csv
@@ -9,8 +7,6 @@ class SourceFileUploader
     text/plain
   ].freeze
   CSV_EXTENSION = ".csv"
-  READ_BUFFER_SIZE = 64.kilobytes
-
   class Error < StandardError
   end
 
@@ -31,7 +27,7 @@ class SourceFileUploader
     raise Error, "The CSV file is empty." if byte_size.zero?
 
     SourceFileInspector.new(io).call
-    sha256 = sha256_for(io)
+    sha256 = SourceFileChecksum.for_io(io)[:sha256]
 
     source_file = @dataset.source_files.build(
       original_filename: original_filename,
@@ -48,6 +44,8 @@ class SourceFileUploader
   rescue ActiveRecord::RecordInvalid => error
     raise Error, error.record.errors.full_messages.to_sentence
   rescue SourceFileInspector::Error => error
+    raise Error, error.message
+  rescue SourceFileChecksum::Error => error
     raise Error, error.message
   ensure
     io&.rewind
@@ -79,16 +77,6 @@ class SourceFileUploader
     return io.size.to_i if io.respond_to?(:size)
 
     raise Error, "The uploaded file size could not be determined."
-  end
-
-  def sha256_for(io)
-    io.rewind
-    digest = Digest::SHA256.new
-    while (chunk = io.read(READ_BUFFER_SIZE))
-      digest.update(chunk)
-    end
-    io.rewind
-    digest.hexdigest
   end
 
   def original_filename

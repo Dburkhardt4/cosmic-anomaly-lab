@@ -5,6 +5,7 @@ Rails.application.routes.draw do
   resources :datasets, except: :destroy do
     resources :source_files, only: %i[create show] do
       resource :field_mapping, only: %i[edit update], controller: "field_mappings"
+      resource :import_preview, only: :show, controller: "import_previews"
     end
   end
 end

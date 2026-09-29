@@ -1,0 +1,232 @@
+<% content_for :title, "Import preview · #{@source_file.original_filename} · #{@dataset.name} · Cosmic Anomaly Lab" %>
+<% summary = @preview[:summary] %>
+
+<main class="workspace">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Dataset / <%= @dataset.id %> / Import preview</p>
+      <h1>Import preview</h1>
+      <p class="heading-note">A bounded dry run showing how the saved field mappings would interpret source rows. No scientific records are created.</p>
+    </div>
+    <div class="form-actions">
+      <%= link_to "Back to mappings", edit_dataset_source_file_field_mapping_path(@dataset, @source_file), class: "button button-quiet" %>
+    </div>
+  </header>
+
+  <div class="dataset-layout source-inspection-layout">
+    <section class="dataset-main" aria-labelledby="preview-heading">
+      <div class="inspection-banner preview-banner" role="status">
+        <strong>Dry run only</strong>
+        <span>This preview reads the attached CSV and saved mappings without importing rows, normalizing values, converting units, or changing the source file.</span>
+      </div>
+
+      <section aria-labelledby="preview-heading">
+        <div class="section-heading">
+          <h2 id="preview-heading">Preview summary</h2>
+          <span class="state-tag state-tag-ready">No records written</span>
+        </div>
+
+        <dl class="meta-list preview-summary-list">
+          <div class="meta-row">
+            <dt>Source file</dt>
+            <dd class="mono"><%= summary[:source_filename] %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Total source rows</dt>
+            <dd class="mono"><%= number_with_delimiter(summary[:total_source_row_count]) %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Rows previewed</dt>
+            <dd class="mono"><%= number_with_delimiter(summary[:rows_previewed]) %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Rows with errors</dt>
+            <dd class="mono"><%= number_with_delimiter(summary[:rows_with_errors]) %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Rows with warnings</dt>
+            <dd class="mono"><%= number_with_delimiter(summary[:rows_with_warnings]) %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Mapped columns</dt>
+            <dd class="mono"><%= number_with_delimiter(summary[:mapped_column_count]) %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Unmapped columns</dt>
+            <dd class="mono"><%= number_with_delimiter(summary[:unmapped_column_count]) %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Normalized concepts</dt>
+            <dd><%= summary[:normalized_concepts].any? ? summary[:normalized_concepts].map { |concept| concept[:name] }.to_sentence : "None" %></dd>
+          </div>
+        </dl>
+      </section>
+
+      <% if @preview[:issues].any? %>
+        <section class="inspection-section" aria-labelledby="preview-issues-heading">
+          <div class="section-heading">
+            <h2 id="preview-issues-heading">Validation issues</h2>
+            <span class="section-label"><%= pluralize(@preview[:issues].length, "issue") %></span>
+          </div>
+
+          <ul class="preview-issue-list">
+            <% @preview[:issues].each do |issue| %>
+              <li class="preview-issue preview-issue-<%= issue.severity %>">
+                <div class="preview-issue-heading">
+                  <span class="preview-severity"><%= issue.severity %></span>
+                  <span class="mono preview-issue-code"><%= issue.code %></span>
+                </div>
+                <p><%= issue.message %></p>
+              </li>
+            <% end %>
+          </ul>
+        </section>
+      <% end %>
+
+      <section class="inspection-section" aria-labelledby="preview-rows-heading">
+        <div class="section-heading">
+          <h2 id="preview-rows-heading">Source rows</h2>
+          <span class="section-label"><%= pluralize(@preview[:rows].length, "preview row") %></span>
+        </div>
+
+        <% if @preview[:rows].any? %>
+          <div class="preview-row-list">
+            <% @preview[:rows].each do |row| %>
+              <article class="preview-row">
+                <header class="preview-row-heading">
+                  <h3>Source row <%= row[:source_row_number] %></h3>
+                  <% if row[:importable] %>
+                    <span class="state-tag state-tag-ready">Eligible for import</span>
+                  <% else %>
+                    <span class="state-tag state-tag-error">Not eligible for import</span>
+                  <% end %>
+                </header>
+
+                <% if row[:issues].any? %>
+                  <ul class="preview-row-issues">
+                    <% row[:issues].each do |issue| %>
+                      <li class="preview-issue-inline preview-issue-inline-<%= issue.severity %>">
+                        <span class="preview-severity"><%= issue.severity %></span>
+                        <span><%= issue.message %></span>
+                      </li>
+                    <% end %>
+                  </ul>
+                <% end %>
+
+                <div class="preview-row-grid">
+                  <section class="preview-row-section" aria-labelledby="original-values-<%= row[:source_row_number] %>">
+                    <h4 id="original-values-<%= row[:source_row_number] %>">Original source values</h4>
+                    <div class="workbench-table-wrap">
+                      <table class="workbench-table preview-values-table">
+                        <caption class="visually-hidden">Original values for source row <%= row[:source_row_number] %></caption>
+                        <thead>
+                          <tr>
+                            <th scope="col">Source column</th>
+                            <th scope="col">Value</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% @preview[:columns].each_with_index do |column, index| %>
+                            <% value = row[:source_values][index] %>
+                            <tr>
+                              <td class="mono"><%= column.presence || "(blank source name)" %></td>
+                              <td><%= value.nil? || value == "" ? "(blank)" : value %></td>
+                            </tr>
+                          <% end %>
+                          <% row[:source_values][@preview[:columns].length..].to_a.each_with_index do |value, index| %>
+                            <tr>
+                              <td class="mono">(additional value <%= index + 1 %>)</td>
+                              <td><%= value.nil? || value == "" ? "(blank)" : value %></td>
+                            </tr>
+                          <% end %>
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+
+                  <section class="preview-row-section" aria-labelledby="mapped-values-<%= row[:source_row_number] %>">
+                    <h4 id="mapped-values-<%= row[:source_row_number] %>">Mapped concepts</h4>
+                    <% if row[:mapped_values].any? %>
+                      <div class="workbench-table-wrap">
+                        <table class="workbench-table preview-values-table">
+                          <caption class="visually-hidden">Mapped concepts for source row <%= row[:source_row_number] %></caption>
+                          <thead>
+                            <tr>
+                              <th scope="col">Concept</th>
+                              <th scope="col">Source value</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <% row[:mapped_values].each do |mapped_value| %>
+                              <tr>
+                                <td><%= mapped_value[:concept].name %><span class="preview-source-column mono"><%= mapped_value[:source_column_name] %></span></td>
+                                <td><%= mapped_value[:value].nil? || mapped_value[:value] == "" ? "(blank)" : mapped_value[:value] %></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    <% else %>
+                      <div class="empty-state preview-empty-state">No valid mapped concepts for this row.</div>
+                    <% end %>
+                  </section>
+
+                  <section class="preview-row-section" aria-labelledby="unmapped-values-<%= row[:source_row_number] %>">
+                    <h4 id="unmapped-values-<%= row[:source_row_number] %>">Unmapped source values</h4>
+                    <% if row[:unmapped_values].any? %>
+                      <div class="workbench-table-wrap">
+                        <table class="workbench-table preview-values-table">
+                          <caption class="visually-hidden">Unmapped values for source row <%= row[:source_row_number] %></caption>
+                          <thead>
+                            <tr>
+                              <th scope="col">Source column</th>
+                              <th scope="col">Value</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <% row[:unmapped_values].each do |unmapped_value| %>
+                              <tr>
+                                <td class="mono"><%= unmapped_value[:source_column_name].presence || "(blank source name)" %></td>
+                                <td><%= unmapped_value[:value].nil? || unmapped_value[:value] == "" ? "(blank)" : unmapped_value[:value] %></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    <% else %>
+                      <div class="empty-state preview-empty-state">No unmapped source values.</div>
+                    <% end %>
+                  </section>
+                </div>
+              </article>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="empty-state">
+            <strong>No source rows were previewed</strong>
+            The source may contain only a header, or a validation issue may have stopped CSV reading.
+          </div>
+        <% end %>
+      </section>
+    </section>
+
+    <aside class="inspector" aria-labelledby="preview-context-heading">
+      <p class="inspector-label">Preview context</p>
+      <h2 id="preview-context-heading">No import performed</h2>
+      <dl class="meta-list">
+        <div class="meta-row">
+          <dt>Dataset</dt>
+          <dd><%= link_to @dataset.name, @dataset, class: "inspector-link" %></dd>
+        </div>
+        <div class="meta-row">
+          <dt>Source status</dt>
+          <dd>Attached locally; source values preserved</dd>
+        </div>
+        <div class="meta-row">
+          <dt>Next step</dt>
+          <dd>Persistent import is not implemented.</dd>
+        </div>
+      </dl>
+    </aside>
+  </div>
+</main>

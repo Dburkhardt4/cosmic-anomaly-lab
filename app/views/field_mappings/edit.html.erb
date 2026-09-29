@@ -9,6 +9,7 @@
     </div>
     <div class="form-actions">
       <%= link_to "Back to inspection", [@dataset, @source_file], class: "button button-quiet" %>
+      <%= link_to "Preview import", dataset_source_file_import_preview_path(@dataset, @source_file), class: "button button-primary" %>
     </div>
   </header>
 

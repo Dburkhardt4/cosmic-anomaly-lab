@@ -6,7 +6,7 @@
 
 The application is intended to help a user explore scientific data without requiring deep prior expertise in astronomy, astrophysics, or the structure of every individual dataset.
 
-The current workflow attaches and inspects CSV source files, then lets the user record explicit field mappings to a small reusable vocabulary. These mappings describe how source-specific columns may later relate to common concepts; they do not import rows or normalize values.
+The current workflow attaches and inspects CSV source files, then lets the user record explicit field mappings to a small reusable vocabulary and review a read-only import preview. These mappings describe how source-specific columns may later relate to common concepts; the preview validates and displays source values but does not import rows or normalize values. Persistent import and normalization remain future work.
 
 Its core purpose is to make it easier to:
 
@@ -118,6 +118,8 @@ Mappings may be:
 - left unmapped when their meaning is uncertain.
 
 The mapping records a possible relationship for later normalization. It does not import records, transform values, convert units, rename source columns, or infer scientific meaning automatically.
+
+The user can then open an import preview to review a limited set of original source rows, mapped concepts, unmapped values, and validation issues. This is a dry run only; it does not commit an import or normalize records.
 
 ### 5. Understand unfamiliar terminology
 

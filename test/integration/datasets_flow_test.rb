@@ -118,6 +118,7 @@ class DatasetsFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Map inspected fields"
+    assert_select "a[href='#{dataset_source_file_import_preview_path(dataset, source_file)}']", "Preview import"
     assert_select ".mapping-table", text: /source_id/
     assert_select ".mapping-table", text: /A-1/
     assert_select "select#field-mapping-0 option", text: "Leave unmapped"
@@ -155,6 +156,54 @@ class DatasetsFlowTest < ActionDispatch::IntegrationTest
     assert_select ".mapping-table", text: /Observation Time/
     assert_select "select#field-mapping-1 option[selected='selected']", text: "Observation Time"
     assert_equal contents, source_file.reload.file.download
+  end
+
+  test "previews mapped values without importing records" do
+    dataset = Dataset.create!(name: "Import preview catalog")
+    contents = File.binread(Rails.root.join("test/fixtures/files/source_catalog.csv"))
+    post dataset_source_files_path(dataset), params: {
+      source_file: {
+        file: fixture_file_upload("source_catalog.csv", "text/csv")
+      }
+    }
+    source_file = SourceFile.order(:created_at).last
+    right_ascension = NormalizedConcept.create!(
+      key: "right_ascension_preview_flow_test",
+      name: "Right Ascension",
+      description: "An angular coordinate.",
+      expected_value_type: "number",
+      canonical_unit: "degree"
+    )
+
+    get edit_dataset_source_file_field_mapping_path(dataset, source_file)
+    assert_response :success
+
+    patch dataset_source_file_field_mapping_path(dataset, source_file), params: {
+      field_mappings: {
+        "0" => right_ascension.id,
+        "1" => "",
+        "2" => ""
+      }
+    }
+
+    assert_redirected_to edit_dataset_source_file_field_mapping_path(dataset, source_file)
+
+    assert_no_difference([ "FieldMapping.count", "SourceFile.count", "NormalizedConcept.count" ]) do
+      get dataset_source_file_import_preview_path(dataset, source_file)
+    end
+
+    assert_response :success
+    assert_select "h1", /Import preview/
+    assert_select ".preview-banner", text: /Dry run only/i
+    assert_select ".preview-summary-list", text: /3/
+    assert_select ".preview-values-table", text: /Right Ascension/
+    assert_select ".preview-values-table", text: /flux note/
+    assert_select ".preview-row", count: 3
+    assert_equal contents, source_file.reload.file.download
+
+    get dataset_source_file_import_preview_path(dataset, source_file)
+    assert_response :success
+    assert_select ".preview-values-table", text: /Right Ascension/
   end
 
   test "does not save mappings for duplicate source column names" do
