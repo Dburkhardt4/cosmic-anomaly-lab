@@ -1,0 +1,110 @@
+<% content_for :title, "Map fields · #{@source_file.original_filename} · #{@dataset.name} · Cosmic Anomaly Lab" %>
+
+<main class="workspace">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Dataset / <%= @dataset.id %> / Field mapping</p>
+      <h1>Map inspected fields</h1>
+      <p class="heading-note">Choose explicit relationships between source-specific columns and reusable concepts. Nothing is inferred, imported, renamed, or normalized.</p>
+    </div>
+    <div class="form-actions">
+      <%= link_to "Back to inspection", [@dataset, @source_file], class: "button button-quiet" %>
+    </div>
+  </header>
+
+  <div class="dataset-layout source-inspection-layout">
+    <section class="dataset-main" aria-labelledby="mapping-heading">
+      <div class="inspection-banner" role="status">
+        <strong>Explicit mapping only</strong>
+        <span>A mapping records your decision about a source column. It does not import rows, transform values, convert units, or change the original CSV.</span>
+      </div>
+
+      <% if @source_file.errors.any? %>
+        <div class="error-summary" role="alert" tabindex="-1">
+          <h2>Field mappings could not be saved</h2>
+          <ul>
+            <% @source_file.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <section aria-labelledby="mapping-heading">
+        <div class="section-heading">
+          <h2 id="mapping-heading">Source columns</h2>
+          <span class="section-label"><%= pluralize(@inspection[:columns].length, "column") %></span>
+        </div>
+        <p class="section-note">Sample values are shown only as context from inspection. Select a concept only when you explicitly intend to map the exact source column to it.</p>
+
+        <% if @inspection[:warnings].any? %>
+          <ul class="warning-list mapping-warnings">
+            <% @inspection[:warnings].each do |warning| %>
+              <li><%= warning %></li>
+            <% end %>
+          </ul>
+        <% end %>
+
+        <%= form_with url: dataset_source_file_field_mapping_path(@dataset, @source_file), method: :patch do %>
+          <div class="workbench-table-wrap">
+            <table class="workbench-table inspection-table mapping-table">
+              <caption class="visually-hidden">Explicit mappings for inspected source columns</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Position</th>
+                  <th scope="col">Original source column</th>
+                  <th scope="col">Representative values</th>
+                  <th scope="col">Current mapping</th>
+                  <th scope="col">Set mapping</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @inspection[:columns].each_with_index do |column, index| %>
+                  <% field_mapping = @field_mappings_by_column[column] %>
+                  <% current_concept = field_mapping&.mapped? ? field_mapping.normalized_concept : nil %>
+                  <% sample_values = @inspection[:sample_rows].map { |row| row[index].nil? || row[index] == "" ? "(blank)" : row[index] } %>
+                  <tr>
+                    <td data-label="Position" class="mono muted"><%= index + 1 %></td>
+                    <td data-label="Original source column" class="mono"><%= column.presence || "(blank source name)" %></td>
+                    <td data-label="Representative values" class="mapping-samples"><%= sample_values.any? ? sample_values.join(", ") : "No sample values" %></td>
+                    <td data-label="Current mapping"><%= current_concept&.name || "Unmapped" %></td>
+                    <td data-label="Set mapping">
+                      <%= select_tag "field_mappings[#{index}]",
+                        options_from_collection_for_select(@normalized_concepts, :id, :name, current_concept&.id),
+                        include_blank: "Leave unmapped",
+                        id: "field-mapping-#{index}" %>
+                      <%= label_tag "field-mapping-#{index}", "Set mapping for #{column.presence || 'blank source name'}", class: "visually-hidden" %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="form-actions mapping-actions">
+            <%= submit_tag "Save field mappings" %>
+            <%= link_to "Cancel", [@dataset, @source_file], class: "button button-quiet" %>
+          </div>
+        <% end %>
+      </section>
+    </section>
+
+    <aside class="inspector" aria-labelledby="concepts-heading">
+      <p class="inspector-label">Reusable vocabulary</p>
+      <h2 id="concepts-heading">Available concepts</h2>
+      <p class="section-note">These concepts are labels for future normalization work. Choosing one does not alter the source value.</p>
+
+      <dl class="meta-list concept-list">
+        <% @normalized_concepts.each do |concept| %>
+          <div class="meta-row">
+            <dt><%= concept.name %></dt>
+            <dd>
+              <span><%= concept.description %></span>
+              <span class="concept-key mono"><%= concept.key %></span>
+            </dd>
+          </div>
+        <% end %>
+      </dl>
+    </aside>
+  </div>
+</main>

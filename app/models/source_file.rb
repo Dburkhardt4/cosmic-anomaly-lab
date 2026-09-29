@@ -1,5 +1,6 @@
 class SourceFile < ApplicationRecord
   belongs_to :dataset
+  has_many :field_mappings, dependent: :destroy
 
   has_one_attached :file
 

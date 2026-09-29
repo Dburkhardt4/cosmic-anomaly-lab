@@ -80,7 +80,119 @@ class DatasetsFlowTest < ActionDispatch::IntegrationTest
     assert_select ".inspection-table", text: /12,3/
     assert_select ".inspection-table", text: /value with \"quotes\"/
     assert_select ".source-file-row-count", text: "3 total rows"
+    assert_select "a[href='#{edit_dataset_source_file_field_mapping_path(dataset, source_file)}']", "Map fields"
     assert_equal contents, source_file.reload.file.download
+  end
+
+  test "maps inspected columns, leaves fields unmapped, updates mappings, and persists them" do
+    dataset = Dataset.create!(name: "Field mapping catalog")
+    contents = File.binread(Rails.root.join("test/fixtures/files/source_catalog.csv"))
+    post dataset_source_files_path(dataset), params: {
+      source_file: {
+        file: fixture_file_upload("source_catalog.csv", "text/csv")
+      }
+    }
+    source_file = SourceFile.order(:created_at).last
+    right_ascension = NormalizedConcept.create!(
+      key: "right_ascension_flow_test",
+      name: "Right Ascension",
+      description: "An angular coordinate.",
+      expected_value_type: "number",
+      canonical_unit: "degree"
+    )
+    declination = NormalizedConcept.create!(
+      key: "declination_flow_test",
+      name: "Declination",
+      description: "A celestial latitude coordinate.",
+      expected_value_type: "number",
+      canonical_unit: "degree"
+    )
+    observation_time = NormalizedConcept.create!(
+      key: "observation_time_flow_test",
+      name: "Observation Time",
+      description: "A time associated with an observation.",
+      expected_value_type: "datetime"
+    )
+
+    get edit_dataset_source_file_field_mapping_path(dataset, source_file)
+
+    assert_response :success
+    assert_select "h1", "Map inspected fields"
+    assert_select ".mapping-table", text: /source_id/
+    assert_select ".mapping-table", text: /A-1/
+    assert_select "select#field-mapping-0 option", text: "Leave unmapped"
+
+    patch dataset_source_file_field_mapping_path(dataset, source_file), params: {
+      field_mappings: {
+        "0" => right_ascension.id,
+        "1" => "",
+        "2" => declination.id
+      }
+    }
+
+    assert_redirected_to edit_dataset_source_file_field_mapping_path(dataset, source_file)
+    assert_equal 3, source_file.field_mappings.count
+    assert_equal "mapped", source_file.field_mappings.find_by!(source_column_name: "source_id").status
+    assert_equal right_ascension, source_file.field_mappings.find_by!(source_column_name: "source_id").normalized_concept
+    assert source_file.field_mappings.find_by!(source_column_name: "flux note").unmapped?
+    assert_equal declination, source_file.field_mappings.find_by!(source_column_name: "quality").normalized_concept
+
+    patch dataset_source_file_field_mapping_path(dataset, source_file), params: {
+      field_mappings: {
+        "0" => "",
+        "1" => observation_time.id,
+        "2" => declination.id
+      }
+    }
+
+    assert_redirected_to edit_dataset_source_file_field_mapping_path(dataset, source_file)
+    assert source_file.field_mappings.find_by!(source_column_name: "source_id").reload.unmapped?
+    assert_equal observation_time, source_file.field_mappings.find_by!(source_column_name: "flux note").reload.normalized_concept
+
+    get edit_dataset_source_file_field_mapping_path(dataset, source_file)
+
+    assert_response :success
+    assert_select ".mapping-table", text: /Observation Time/
+    assert_select "select#field-mapping-1 option[selected='selected']", text: "Observation Time"
+    assert_equal contents, source_file.reload.file.download
+  end
+
+  test "does not save mappings for duplicate source column names" do
+    dataset = Dataset.create!(name: "Duplicate header catalog")
+    post dataset_source_files_path(dataset), params: {
+      source_file: {
+        file: fixture_file_upload("duplicate_headers.csv", "text/csv")
+      }
+    }
+    source_file = SourceFile.order(:created_at).last
+
+    get edit_dataset_source_file_field_mapping_path(dataset, source_file)
+    assert_response :success
+    assert_select ".mapping-warnings", text: /share the same name/i
+
+    patch dataset_source_file_field_mapping_path(dataset, source_file), params: {
+      field_mappings: { "0" => "", "1" => "", "2" => "" }
+    }
+
+    assert_response :unprocessable_content
+    assert_select "[role='alert']", text: /unique source column names/i
+    assert_empty source_file.field_mappings
+  end
+
+  test "rejects malformed field mapping parameters without raising" do
+    dataset = Dataset.create!(name: "Malformed mapping catalog")
+    post dataset_source_files_path(dataset), params: {
+      source_file: {
+        file: fixture_file_upload("source_catalog.csv", "text/csv")
+      }
+    }
+    source_file = SourceFile.order(:created_at).last
+
+    patch dataset_source_file_field_mapping_path(dataset, source_file), params: { field_mappings: "not-a-map" }
+
+    assert_response :unprocessable_content
+    assert_select "[role='alert']", text: /parameters were invalid/i
+    assert_empty source_file.field_mappings
   end
 
   test "rejects an unsupported upload and leaves the dataset without a source file" do

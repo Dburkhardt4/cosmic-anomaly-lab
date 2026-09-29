@@ -6,6 +6,8 @@
 
 The application is intended to help a user explore scientific data without requiring deep prior expertise in astronomy, astrophysics, or the structure of every individual dataset.
 
+The current workflow attaches and inspects CSV source files, then lets the user record explicit field mappings to a small reusable vocabulary. These mappings describe how source-specific columns may later relate to common concepts; they do not import rows or normalize values.
+
 Its core purpose is to make it easier to:
 
 - import processed scientific datasets;
@@ -108,16 +110,14 @@ The user can preview sample records before continuing.
 
 ### 4. Map fields into a common schema
 
-Cosmic Anomaly Lab attempts to associate dataset-specific fields with normalized concepts.
+The user may explicitly associate dataset-specific fields with normalized concepts.
 
 Mappings may be:
 
-- automatically suggested;
-- manually confirmed;
-- manually corrected;
+- manually selected;
 - left unmapped when their meaning is uncertain.
 
-The application should not silently guess when confidence is low.
+The mapping records a possible relationship for later normalization. It does not import records, transform values, convert units, rename source columns, or infer scientific meaning automatically.
 
 ### 5. Understand unfamiliar terminology
 

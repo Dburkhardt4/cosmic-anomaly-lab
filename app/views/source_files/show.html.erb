@@ -5,10 +5,11 @@
     <div>
       <p class="eyebrow">Dataset / <%= @dataset.id %> / Source inspection</p>
       <h1><%= @source_file.original_filename %></h1>
-      <p class="heading-note">Read-only structural inspection for source data. This file has not been imported or normalized.</p>
+      <p class="heading-note">Read-only structural inspection for source data. You may record explicit field mappings, but this file has not been imported or normalized.</p>
     </div>
     <div class="form-actions">
       <%= link_to "Back to dataset", @dataset, class: "button button-quiet" %>
+      <%= link_to "Map fields", edit_dataset_source_file_field_mapping_path(@dataset, @source_file), class: "button button-primary" %>
     </div>
   </header>
 
@@ -16,7 +17,7 @@
     <section class="dataset-main" aria-labelledby="inspection-heading">
       <div class="inspection-banner" role="status">
         <strong>Source data only</strong>
-        <span>Values are shown as received. This file has not been imported or normalized; no field mapping or unit inference has occurred.</span>
+        <span>Values are shown as received. This file has not been imported or normalized; field mappings are explicit labels only and do not infer units or scientific meaning.</span>
       </div>
 
       <section aria-labelledby="inspection-heading">
@@ -154,7 +155,7 @@
         </div>
         <div class="meta-row">
           <dt>Next step</dt>
-          <dd>Field mapping is intentionally not available yet.</dd>
+          <dd><%= link_to "Review explicit field mappings", edit_dataset_source_file_field_mapping_path(@dataset, @source_file), class: "inspector-link" %></dd>
         </div>
       </dl>
     </aside>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_103100) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_120000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -49,6 +49,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_103100) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "field_mappings", force: :cascade do |t|
+    t.integer "source_file_id", null: false
+    t.string "source_column_name", null: false
+    t.integer "normalized_concept_id"
+    t.string "status", default: "unmapped", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["normalized_concept_id"], name: "index_field_mappings_on_normalized_concept_id"
+    t.index ["source_file_id", "source_column_name"], name: "index_field_mappings_on_source_file_and_column", unique: true
+    t.index ["source_file_id"], name: "index_field_mappings_on_source_file_id"
+  end
+
+  create_table "normalized_concepts", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "name", null: false
+    t.text "description", null: false
+    t.string "expected_value_type"
+    t.string "canonical_unit"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_normalized_concepts_on_key", unique: true
+  end
+
   create_table "source_files", force: :cascade do |t|
     t.integer "dataset_id", null: false
     t.string "original_filename", null: false
@@ -62,5 +86,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_103100) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "field_mappings", "normalized_concepts"
+  add_foreign_key "field_mappings", "source_files"
   add_foreign_key "source_files", "datasets"
 end
