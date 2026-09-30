@@ -1,5 +1,9 @@
 class Dataset < ApplicationRecord
   has_many :source_files, dependent: :destroy
+  has_many :field_mappings, through: :source_files
+  has_many :import_runs, through: :source_files
+  has_many :imported_source_records, through: :source_files
+  has_many :normalized_records, through: :source_files
 
   validates :name, presence: true
   validate :source_url_uses_http_scheme

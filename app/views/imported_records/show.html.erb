@@ -1,0 +1,210 @@
+<% content_for :title, "Imported record ##{@record.id} · #{@dataset.name} · Cosmic Anomaly Lab" %>
+
+<main class="workspace">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Dataset / <%= @dataset.id %> / Imported record</p>
+      <h1>Imported record #<%= @record.id %></h1>
+      <p class="heading-note">A generic record with its normalized interpretation, original source evidence, and import provenance kept together.</p>
+    </div>
+    <div class="form-actions">
+      <%= link_to "Back to imported records", dataset_imported_records_path(@dataset), class: "button button-quiet" %>
+      <%= link_to "Source file", [@dataset, @source_file], class: "button button-primary" %>
+    </div>
+  </header>
+
+  <div class="dataset-layout source-inspection-layout">
+    <section class="dataset-main record-detail-main" aria-labelledby="record-detail-heading">
+      <div class="inspection-banner record-detail-banner" role="status">
+        <strong>Normalized interpretation kept separate</strong>
+        <span>The normalized values below are persisted labels and stored values from the explicit mapping snapshot. The original source record remains authoritative evidence.</span>
+      </div>
+
+      <section class="record-detail-section normalized-record-section" aria-labelledby="normalized-heading">
+        <div class="section-heading">
+          <div>
+            <p class="section-label">Interpretation</p>
+            <h2 id="normalized-heading">Normalized interpretation</h2>
+          </div>
+          <span class="state-tag state-tag-ready"><%= @record.record_type %></span>
+        </div>
+        <% if @record.normalized_values.any? %>
+          <div class="workbench-table-wrap">
+            <table class="workbench-table record-detail-table">
+              <caption class="visually-hidden">Normalized concepts for imported record <%= @record.id %></caption>
+              <thead>
+                <tr>
+                  <th scope="col">Concept name</th>
+                  <th scope="col">Concept key</th>
+                  <th scope="col">Normalized/stored value</th>
+                  <th scope="col">Canonical unit</th>
+                  <th scope="col">Description</th>
+                  <th scope="col">Source column</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @record.normalized_values.each do |normalized_value| %>
+                  <% concept = @concepts_by_key[normalized_value["concept_key"]] %>
+                  <tr>
+                    <td data-label="Concept name"><%= concept&.name || normalized_value["concept_name"] || "Not recorded" %></td>
+                    <td data-label="Concept key" class="mono"><%= normalized_value["concept_key"].presence || "Not recorded" %></td>
+                    <td data-label="Normalized/stored value" class="record-value-cell"><%= normalized_value["value"].nil? ? "(nil)" : normalized_value["value"] == "" ? "(blank)" : normalized_value["value"] %></td>
+                    <td data-label="Canonical unit"><%= concept&.canonical_unit.presence || "Not defined" %></td>
+                    <td data-label="Description" class="record-description-cell"><%= concept&.description.presence || "Not recorded in the current concept vocabulary." %></td>
+                    <td data-label="Source column" class="mono"><%= normalized_value["source_column_name"].presence || "Not recorded" %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <div class="empty-state"><strong>No normalized concepts stored</strong>This accepted record has no mapped normalized values.</div>
+        <% end %>
+      </section>
+
+      <section class="record-detail-section original-record-section" aria-labelledby="original-heading">
+        <div class="section-heading">
+          <div>
+            <p class="section-label">Evidence</p>
+            <h2 id="original-heading">Original source record</h2>
+          </div>
+          <span class="section-label">Source row <%= @source_record.source_row_number %></span>
+        </div>
+        <p class="section-note">These are the original field names and values persisted at import time. Mapped status is shown as context and does not change the payload.</p>
+        <% original_columns = @source_record.original_row_payload["source_columns"] || [] %>
+        <% original_values = @source_record.original_row_payload["values"] || [] %>
+        <% original_width = [original_columns.length, original_values.length].max %>
+        <% snapshot_by_column = @record.field_mapping_snapshot.index_by { |mapping| mapping["source_column_name"] } %>
+        <% if original_width.positive? %>
+          <div class="workbench-table-wrap">
+            <table class="workbench-table record-detail-table original-values-table">
+              <caption class="visually-hidden">Original source values for source row <%= @source_record.source_row_number %></caption>
+              <thead>
+                <tr>
+                  <th scope="col">Original field name</th>
+                  <th scope="col">Exact original value</th>
+                  <th scope="col">Mapping status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% original_width.times do |index| %>
+                  <% source_column_name = original_columns[index] %>
+                  <% original_value = original_values[index] %>
+                  <% mapping = snapshot_by_column[source_column_name] %>
+                  <tr>
+                    <td data-label="Original field name" class="mono"><%= source_column_name.presence || "(source position #{index + 1})" %></td>
+                    <td data-label="Exact original value" class="record-value-cell"><%= original_value.nil? ? "(nil)" : original_value == "" ? "(empty string)" : original_value %></td>
+                    <td data-label="Mapping status"><%= mapping&.dig("status") == "mapped" ? "Mapped to #{mapping["normalized_concept_name"].presence || mapping["normalized_concept_key"]}" : "Unmapped / source-specific" %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <div class="empty-state"><strong>No original values stored</strong>The persisted source payload is empty.</div>
+        <% end %>
+      </section>
+
+      <section class="record-detail-section provenance-section" aria-labelledby="provenance-heading">
+        <div class="section-heading">
+          <div>
+            <p class="section-label">Traceability</p>
+            <h2 id="provenance-heading">Provenance</h2>
+          </div>
+          <span class="section-label">Source-linked</span>
+        </div>
+        <dl class="meta-list provenance-list">
+          <div class="meta-row">
+            <dt>Dataset</dt>
+            <dd><%= link_to @dataset.name, @dataset, class: "inspector-link" %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Source file</dt>
+            <dd><%= link_to @source_file.original_filename, [@dataset, @source_file], class: "inspector-link" %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Source row</dt>
+            <dd class="mono"><%= @source_record.source_row_number %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Source SHA-256</dt>
+            <dd class="mono hash-value"><%= @source_file.sha256 %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Import run</dt>
+            <dd><%= link_to "Run ##{@import_run.id}", dataset_source_file_import_run_path(@dataset, @source_file, @import_run), class: "inspector-link mono" %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Imported at</dt>
+            <dd class="mono"><%= (@import_run.completed_at || @import_run.started_at || @import_run.created_at).to_fs(:iso8601) %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Importer version</dt>
+            <dd class="mono"><%= @import_run.importer_version %></dd>
+          </div>
+          <div class="meta-row">
+            <dt>Payload SHA-256</dt>
+            <dd class="mono hash-value"><%= @source_record.payload_hash %></dd>
+          </div>
+        </dl>
+
+        <section class="mapping-snapshot" aria-labelledby="mapping-snapshot-heading">
+          <div class="section-heading">
+            <h3 id="mapping-snapshot-heading">Mapping snapshot at import</h3>
+            <span class="section-label"><%= pluralize(@record.field_mapping_snapshot.length, "source column") %></span>
+          </div>
+          <% if @record.field_mapping_snapshot.any? %>
+            <div class="workbench-table-wrap">
+              <table class="workbench-table mapping-snapshot-table">
+                <caption class="visually-hidden">Field mapping snapshot for imported record <%= @record.id %></caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Source column</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Concept key</th>
+                    <th scope="col">Concept name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @record.field_mapping_snapshot.each do |mapping| %>
+                    <tr>
+                      <td data-label="Source column" class="mono"><%= mapping["source_column_name"].presence || "(blank source name)" %></td>
+                      <td data-label="Status"><%= mapping["status"] %></td>
+                      <td data-label="Concept key" class="mono"><%= mapping["normalized_concept_key"].presence || "—" %></td>
+                      <td data-label="Concept name"><%= mapping["normalized_concept_name"].presence || "—" %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="empty-state"><strong>No mapping snapshot stored</strong></div>
+          <% end %>
+        </section>
+      </section>
+    </section>
+
+    <aside class="inspector" aria-labelledby="record-side-context-heading">
+      <p class="inspector-label">Record context</p>
+      <h2 id="record-side-context-heading">Original and normalized</h2>
+      <dl class="meta-list">
+        <div class="meta-row">
+          <dt>Record type</dt>
+          <dd class="mono"><%= @record.record_type %></dd>
+        </div>
+        <div class="meta-row">
+          <dt>Normalized values</dt>
+          <dd><%= pluralize(@record.normalized_values.length, "stored value") %></dd>
+        </div>
+        <div class="meta-row">
+          <dt>Unmapped values</dt>
+          <dd><%= pluralize(@record.unmapped_values.length, "source-specific value") %></dd>
+        </div>
+        <div class="meta-row">
+          <dt>Source status</dt>
+          <dd><%= @source_record.status %></dd>
+        </div>
+      </dl>
+    </aside>
+  </div>
+</main>

@@ -17,6 +17,9 @@ end %>
     <div class="form-actions">
       <%= link_to "Back to source file", [@dataset, @source_file], class: "button button-quiet" %>
       <%= link_to "View preview", dataset_source_file_import_preview_path(@dataset, @source_file), class: "button button-primary" %>
+      <% if @import_run.completed? && @import_run.rows_imported.positive? %>
+        <%= link_to "Browse imported records", dataset_imported_records_path(@dataset, source_file_id: @source_file.id), class: "button button-quiet" %>
+      <% end %>
     </div>
   </header>
 

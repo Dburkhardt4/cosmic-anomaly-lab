@@ -48,6 +48,27 @@
         <p><%= @dataset.description.presence || "No description has been recorded for this dataset." %></p>
       </div>
 
+      <section class="record-exploration-panel" aria-labelledby="imported-records-heading">
+        <div class="section-heading">
+          <div>
+            <p class="section-label">Persisted exploration</p>
+            <h2 id="imported-records-heading">Imported records</h2>
+          </div>
+          <span class="state-tag <%= "state-tag-ready" if @imported_record_count.positive? %>">
+            <%= pluralize(@imported_record_count, "imported record") %>
+          </span>
+        </div>
+        <% if @imported_record_count.positive? %>
+          <p class="section-note">Browse normalized interpretations alongside the exact source rows and import provenance preserved for this dataset.</p>
+          <%= link_to "Browse imported records", dataset_imported_records_path(@dataset), class: "button button-primary" %>
+        <% else %>
+          <div class="empty-state record-exploration-empty">
+            <strong>No imported records yet</strong>
+            Complete an import from a mapped source file to make its accepted records available here.
+          </div>
+        <% end %>
+      </section>
+
       <section class="source-files-panel" aria-labelledby="source-files-heading">
         <div class="section-heading">
           <div>

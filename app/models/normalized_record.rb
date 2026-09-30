@@ -1,4 +1,11 @@
 class NormalizedRecord < ApplicationRecord
+  scope :matching_normalized_values, ->(query) {
+    next all if query.blank?
+
+    escaped_query = ActiveRecord::Base.sanitize_sql_like(query.to_s.downcase)
+    where("LOWER(CAST(normalized_values AS TEXT)) LIKE ?", "%#{escaped_query}%")
+  }
+
   belongs_to :imported_source_record
   has_one :source_file, through: :imported_source_record
 

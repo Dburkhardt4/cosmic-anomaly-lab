@@ -7,6 +7,7 @@ class SourceFilesController < ApplicationController
     redirect_to [ @dataset, @source_file ], notice: "Source CSV attached. It has not been imported or normalized."
   rescue SourceFileUploader::Error => error
     @source_files = @dataset.source_files.order(created_at: :desc)
+    @imported_record_count = @dataset.normalized_records.count
     @source_file = @dataset.source_files.build
     @source_file.errors.add(:file, error.message)
     render "datasets/show", status: :unprocessable_content

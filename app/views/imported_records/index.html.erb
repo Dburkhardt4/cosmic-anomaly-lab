@@ -1,0 +1,159 @@
+<% content_for :title, "Imported records · #{@dataset.name} · Cosmic Anomaly Lab" %>
+
+<main class="workspace">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Dataset / <%= @dataset.id %> / Imported records</p>
+      <h1>Imported records</h1>
+      <p class="heading-note">Browse persisted generic records for <%= @dataset.name %>. Normalized values supplement the original source evidence; they do not replace it.</p>
+    </div>
+    <div class="form-actions">
+      <%= link_to "Back to dataset", @dataset, class: "button button-quiet" %>
+    </div>
+  </header>
+
+  <div class="dataset-layout source-inspection-layout">
+    <section class="dataset-main" aria-labelledby="records-heading">
+      <section class="record-filter-panel" aria-labelledby="record-filters-heading">
+        <div class="section-heading">
+          <div>
+            <p class="section-label">Small exploration controls</p>
+            <h2 id="record-filters-heading">Filter records</h2>
+          </div>
+          <span class="section-label"><%= pluralize(@total_record_count, "matching record") %></span>
+        </div>
+
+        <%= form_with url: dataset_imported_records_path(@dataset), method: :get, local: true, class: "record-filter-form" do |form| %>
+          <div class="record-filter-grid">
+            <% if @source_files.many? %>
+              <div class="field">
+                <%= form.label :source_file_id, "Source file" %>
+                <%= select_tag :source_file_id, options_from_collection_for_select(@source_files, :id, :original_filename, @source_file_id), include_blank: "All source files" %>
+              </div>
+            <% end %>
+
+            <% if @record_types.any? %>
+              <div class="field">
+                <%= form.label :record_type, "Record type" %>
+                <%= select_tag :record_type, options_for_select(@record_types, @record_type), include_blank: "All record types" %>
+              </div>
+            <% end %>
+
+            <div class="field record-search-field">
+              <%= form.label :query, "Search normalized values" %>
+              <%= form.text_field :query, value: @query, placeholder: "Concept, key, or stored value" %>
+              <p class="field-hint">Simple case-insensitive text matching against persisted normalized JSON.</p>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <%= form.submit "Apply filters" %>
+            <% if @source_file_id.present? || @record_type.present? || @query.present? %>
+              <%= link_to "Clear filters", dataset_imported_records_path(@dataset), class: "button button-quiet" %>
+            <% end %>
+          </div>
+        <% end %>
+      </section>
+
+      <section class="record-list-section" aria-labelledby="records-heading">
+        <div class="section-heading">
+          <h2 id="records-heading">Record list</h2>
+          <span class="section-label">Page <%= @page %><%= " of #{@total_pages}" if @total_pages.positive? %></span>
+        </div>
+
+        <% if @records.any? %>
+          <div class="workbench-table-wrap">
+            <table class="workbench-table imported-records-table">
+              <caption class="visually-hidden">Imported records for <%= @dataset.name %></caption>
+              <thead>
+                <tr>
+                  <th scope="col">Source row</th>
+                  <th scope="col">Record type</th>
+                  <% @concepts.each do |concept| %>
+                    <th scope="col">
+                      <%= concept.name %>
+                      <span class="table-subvalue mono"><%= concept.key %></span>
+                    </th>
+                  <% end %>
+                  <th scope="col">Source file</th>
+                  <th scope="col">Import run</th>
+                  <th scope="col"><span class="visually-hidden">Action</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @records.each do |record| %>
+                  <% source_record = record.imported_source_record %>
+                  <% source_file = source_record.source_file %>
+                  <% import_run = source_record.import_run %>
+                  <% normalized_values_by_key = record.normalized_values.index_by { |value| value["concept_key"] } %>
+                  <tr>
+                    <td data-label="Source row" class="mono"><%= link_to source_record.source_row_number, dataset_imported_record_path(@dataset, record), class: "dataset-link" %></td>
+                    <td data-label="Record type" class="mono"><%= record.record_type %></td>
+                    <% @concepts.each do |concept| %>
+                      <% normalized_value = normalized_values_by_key[concept.key] %>
+                      <td data-label="<%= concept.name %>" class="record-value-cell"><%= normalized_value ? (normalized_value["value"].nil? || normalized_value["value"] == "" ? "(blank)" : normalized_value["value"]) : "—" %></td>
+                    <% end %>
+                    <td data-label="Source file"><%= link_to source_file.original_filename, [@dataset, source_file], class: "dataset-link" %></td>
+                    <td data-label="Import run">
+                      <%= link_to "Run ##{import_run.id}", dataset_source_file_import_run_path(@dataset, source_file, import_run), class: "dataset-link mono" %>
+                      <span class="table-subvalue mono"><%= import_run.completed_at&.to_fs(:iso8601) || "not completed" %></span>
+                    </td>
+                    <td data-label="Action"><%= link_to "Open", dataset_imported_record_path(@dataset, record), class: "button button-quiet record-open-link" %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+
+          <% if @total_pages > 1 %>
+            <% filter_params = { source_file_id: @source_file_id, record_type: @record_type, query: @query }.compact %>
+            <nav class="pagination" aria-label="Imported record pages">
+              <span class="pagination-summary">Showing page <%= @page %> of <%= @total_pages %></span>
+              <div class="form-actions">
+                <% if @page > 1 %>
+                  <%= link_to "Previous", dataset_imported_records_path(@dataset, filter_params.merge(page: @page - 1)), class: "button button-quiet" %>
+                <% end %>
+                <% if @page < @total_pages %>
+                  <%= link_to "Next", dataset_imported_records_path(@dataset, filter_params.merge(page: @page + 1)), class: "button button-quiet" %>
+                <% end %>
+              </div>
+            </nav>
+          <% end %>
+        <% elsif @total_record_count.zero? && !(@source_file_id.present? || @record_type.present? || @query.present?) %>
+          <div class="empty-state">
+            <strong>No imported records</strong>
+            This dataset has no accepted imported records to explore yet.
+          </div>
+        <% else %>
+          <div class="empty-state">
+            <strong>No records match these filters</strong>
+            Clear or adjust the filters to inspect the persisted records for this dataset.
+          </div>
+        <% end %>
+      </section>
+    </section>
+
+    <aside class="inspector" aria-labelledby="record-context-heading">
+      <p class="inspector-label">Exploration context</p>
+      <h2 id="record-context-heading">Source-aware records</h2>
+      <dl class="meta-list">
+        <div class="meta-row">
+          <dt>Dataset</dt>
+          <dd><%= link_to @dataset.name, @dataset, class: "inspector-link" %></dd>
+        </div>
+        <div class="meta-row">
+          <dt>Concept columns</dt>
+          <dd><%= pluralize(@concepts.length, "mapped concept") %></dd>
+        </div>
+        <div class="meta-row">
+          <dt>Source files</dt>
+          <dd><%= pluralize(@source_files.length, "source file") %></dd>
+        </div>
+        <div class="meta-row">
+          <dt>Search boundary</dt>
+          <dd>Stored normalized values only; no source CSV reread or typed range query is performed.</dd>
+        </div>
+      </dl>
+    </aside>
+  </div>
+</main>

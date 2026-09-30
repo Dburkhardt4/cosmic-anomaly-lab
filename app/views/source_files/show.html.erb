@@ -20,6 +20,9 @@
       <% if @import_run %>
         <%= link_to "View import result", dataset_source_file_import_run_path(@dataset, @source_file, @import_run), class: "button button-quiet" %>
       <% end %>
+      <% if @import_run&.completed? && @source_file.normalized_records.exists? %>
+        <%= link_to "Browse imported records", dataset_imported_records_path(@dataset, source_file_id: @source_file.id), class: "button button-quiet" %>
+      <% end %>
     </div>
   </header>
 

@@ -7,6 +7,7 @@ class DatasetsController < ApplicationController
 
   def show
     @source_files = @dataset.source_files.includes(:import_runs).order(created_at: :desc)
+    @imported_record_count = @dataset.normalized_records.count
     @source_file = @dataset.source_files.build
   end
 

@@ -3,6 +3,7 @@ Rails.application.routes.draw do
 
   root "home#index"
   resources :datasets, except: :destroy do
+    resources :imported_records, only: %i[index show], controller: "imported_records"
     resources :source_files, only: %i[create show] do
       resource :field_mapping, only: %i[edit update], controller: "field_mappings"
       resource :import_preview, only: :show, controller: "import_previews"
