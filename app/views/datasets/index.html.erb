@@ -7,7 +7,10 @@
       <h1>Dataset registry</h1>
       <p class="heading-note">Source-level metadata for processed scientific datasets in this workspace.</p>
     </div>
-    <%= link_to "New dataset", new_dataset_path, class: "button button-primary" %>
+    <div class="form-actions">
+      <%= link_to "Compare datasets", compare_datasets_path, class: "button button-quiet" %>
+      <%= link_to "New dataset", new_dataset_path, class: "button button-primary" %>
+    </div>
   </header>
 
   <section class="dataset-main" aria-labelledby="dataset-table-heading">

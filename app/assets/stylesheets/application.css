@@ -1000,6 +1000,177 @@ textarea {
   white-space: normal;
 }
 
+.comparison-selection-panel {
+  margin-bottom: 28px;
+  padding: 16px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+}
+
+.comparison-selection-panel h2 {
+  margin: 0;
+}
+
+.comparison-selection-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px minmax(0, 1fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.comparison-selection-form .field {
+  margin-bottom: 0;
+}
+
+.comparison-arrow {
+  padding-bottom: 9px;
+  color: var(--green);
+  font-family: var(--mono);
+  font-size: 20px;
+  text-align: center;
+}
+
+.comparison-selection-form .form-actions {
+  margin-top: 16px;
+}
+
+.comparison-readiness {
+  margin-bottom: 28px;
+  padding: 16px;
+  border: 1px solid #485550;
+  background: #202725;
+  color: #b8c8c0;
+}
+
+.comparison-readiness h2 {
+  margin: 0;
+  color: var(--text);
+}
+
+.comparison-readiness p {
+  margin-bottom: 6px;
+}
+
+.comparison-readiness p:last-child {
+  margin-bottom: 0;
+}
+
+.comparison-readiness-none {
+  border-color: #6f6040;
+  background: #282419;
+  color: #e2c987;
+}
+
+.comparison-readiness-none h2 {
+  color: #f0d99b;
+}
+
+.comparison-readiness-no_records {
+  border-color: #6f6040;
+  background: #282419;
+  color: #e2c987;
+}
+
+.comparison-readiness-no_records h2 {
+  color: #f0d99b;
+}
+
+.comparison-boundary {
+  color: inherit;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.comparison-identity-section,
+.shared-concepts-section,
+.dataset-specific-section {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line-strong);
+}
+
+.comparison-dataset-grid,
+.dataset-specific-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.comparison-dataset-card,
+.dataset-specific-card {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.comparison-dataset-card h3,
+.dataset-specific-card h3 {
+  margin: 0 0 14px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.comparison-side-label {
+  margin-bottom: 4px;
+  color: var(--green);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.comparison-meta-list .meta-row {
+  grid-template-columns: 140px 1fr;
+}
+
+.comparison-concepts-table {
+  min-width: 1120px;
+  white-space: normal;
+}
+
+.comparison-concepts-table th,
+.comparison-concepts-table td {
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.comparison-sample-cell {
+  max-width: 230px;
+  font-family: var(--mono);
+}
+
+.comparison-concept-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comparison-concept-list li {
+  display: grid;
+  gap: 2px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.comparison-concept-list li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.comparison-concept-list span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.comparison-card-empty {
+  padding: 20px 12px;
+}
+
 .source-files-panel {
   margin-top: 28px;
   padding-top: 22px;
@@ -1171,6 +1342,17 @@ textarea {
 
   .record-filter-grid {
     grid-template-columns: 1fr;
+  }
+
+  .comparison-selection-grid,
+  .comparison-dataset-grid,
+  .dataset-specific-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .comparison-arrow {
+    padding: 0;
+    transform: rotate(90deg);
   }
 
   .record-detail-section {

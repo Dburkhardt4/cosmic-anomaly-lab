@@ -1,0 +1,206 @@
+<% content_for :title, "Compare datasets · Cosmic Anomaly Lab" %>
+
+<main class="workspace">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Dataset registry / Structural comparison</p>
+      <h1>Compare datasets</h1>
+      <p class="heading-note">Select two imported datasets to inspect shared normalized concepts. This is structural compatibility only; it does not match records or create relationships.</p>
+    </div>
+    <div class="form-actions">
+      <%= link_to "All datasets", datasets_path, class: "button button-quiet" %>
+    </div>
+  </header>
+
+  <div class="dataset-layout comparison-layout">
+    <div class="dataset-main">
+      <section class="comparison-selection-panel" aria-labelledby="comparison-selection-heading">
+        <div class="section-heading">
+          <div>
+            <p class="section-label">Explicit selection</p>
+            <h2 id="comparison-selection-heading">Choose two datasets</h2>
+          </div>
+          <span class="section-label">Dataset A ↔ Dataset B</span>
+        </div>
+
+        <% if @selection_error.present? %>
+          <div class="error-summary" role="alert"><%= @selection_error %></div>
+        <% end %>
+
+        <%= form_with url: compare_datasets_path, method: :get, local: true, class: "comparison-selection-form" do %>
+          <div class="comparison-selection-grid">
+            <div class="field">
+              <%= label_tag :dataset_a_id, "Dataset A" %>
+              <%= select_tag :dataset_a_id, options_from_collection_for_select(@datasets, :id, :name, @dataset_a_id), include_blank: "Select Dataset A", required: true %>
+            </div>
+            <div class="comparison-arrow" aria-hidden="true">↔</div>
+            <div class="field">
+              <%= label_tag :dataset_b_id, "Dataset B" %>
+              <%= select_tag :dataset_b_id, options_from_collection_for_select(@datasets, :id, :name, @dataset_b_id), include_blank: "Select Dataset B", required: true %>
+            </div>
+          </div>
+          <div class="form-actions">
+            <%= submit_tag "Compare selected datasets" %>
+          </div>
+        <% end %>
+      </section>
+
+      <% if @comparison %>
+        <% readiness = @comparison[:readiness] %>
+        <section class="comparison-readiness comparison-readiness-<%= readiness[:status] %>" aria-labelledby="comparison-readiness-heading">
+          <div class="section-heading">
+            <div>
+              <p class="section-label">Comparison readiness</p>
+              <h2 id="comparison-readiness-heading"><%= readiness[:title] %></h2>
+            </div>
+            <span class="state-tag <%= readiness[:status] == :none ? "state-tag-warning" : "state-tag-ready" %>"><%= readiness[:status].to_s.tr("_", " ") %></span>
+          </div>
+          <p><%= readiness[:detail] %></p>
+          <p class="comparison-boundary">No records were matched, linked, ranked, or modified.</p>
+        </section>
+
+        <section class="comparison-identity-section" aria-labelledby="dataset-identity-heading">
+          <div class="section-heading">
+            <div>
+              <p class="section-label">Dataset identity</p>
+              <h2 id="dataset-identity-heading">What each dataset contains</h2>
+            </div>
+            <span class="section-label">Persisted import structure</span>
+          </div>
+
+          <div class="comparison-dataset-grid">
+            <% [ @comparison[:dataset_a], @comparison[:dataset_b] ].each_with_index do |summary, index| %>
+              <section class="comparison-dataset-card" aria-labelledby="dataset-side-<%= index %>">
+                <p class="comparison-side-label">Dataset <%= index.zero? ? "A" : "B" %></p>
+                <h3 id="dataset-side-<%= index %>"><%= link_to summary[:dataset].name, summary[:dataset], class: "dataset-link" %></h3>
+                <dl class="meta-list comparison-meta-list">
+                  <div class="meta-row">
+                    <dt>Imported records</dt>
+                    <dd><%= number_with_delimiter(summary[:record_count]) %></dd>
+                  </div>
+                  <div class="meta-row">
+                    <dt>Source files</dt>
+                    <dd><%= number_with_delimiter(summary[:source_file_count]) %></dd>
+                  </div>
+                  <div class="meta-row">
+                    <dt>Record types</dt>
+                    <dd><%= summary[:record_types].any? ? summary[:record_types].join(", ") : "None recorded" %></dd>
+                  </div>
+                  <div class="meta-row">
+                    <dt>Available concepts</dt>
+                    <dd><%= pluralize(summary[:concepts].length, "concept") %></dd>
+                  </div>
+                </dl>
+              </section>
+            <% end %>
+          </div>
+        </section>
+
+        <section class="shared-concepts-section" aria-labelledby="shared-concepts-heading">
+          <div class="section-heading">
+            <div>
+              <p class="section-label">Shared normalized concepts</p>
+              <h2 id="shared-concepts-heading">Explicitly common structure</h2>
+            </div>
+            <span class="section-label"><%= pluralize(@comparison[:shared_concepts].length, "shared concept") %></span>
+          </div>
+
+          <% if @comparison[:shared_concepts].any? %>
+            <div class="workbench-table-wrap" role="region" aria-label="Shared normalized concepts table" tabindex="0">
+              <table class="workbench-table comparison-concepts-table">
+                <caption class="visually-hidden">Normalized concepts shared by the selected datasets</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Concept</th>
+                    <th scope="col">Key</th>
+                    <th scope="col">Canonical unit</th>
+                    <th scope="col">Value type</th>
+                    <th scope="col">Dataset A source field</th>
+                    <th scope="col">Dataset B source field</th>
+                    <th scope="col">Records A / B</th>
+                    <th scope="col">Small stored samples</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @comparison[:shared_concepts].each do |concept| %>
+                    <% dataset_b_concept = @comparison[:dataset_b][:concepts].find { |candidate| candidate[:key] == concept[:key] } %>
+                    <tr>
+                      <td data-label="Concept"><%= concept[:name] %></td>
+                      <td data-label="Key" class="mono"><%= concept[:key] %></td>
+                      <td data-label="Canonical unit"><%= concept[:canonical_unit].presence || "Not defined" %></td>
+                      <td data-label="Value type"><%= concept[:expected_value_type].presence || "Not defined" %></td>
+                      <td data-label="Dataset A source field" class="mono"><%= concept[:source_columns].presence || "Not recorded" %></td>
+                      <td data-label="Dataset B source field" class="mono"><%= dataset_b_concept[:source_columns].presence || "Not recorded" %></td>
+                      <td data-label="Records A / B" class="mono"><%= concept[:dataset_a_record_count] %> / <%= concept[:dataset_b_record_count] %></td>
+                      <td data-label="Small stored samples" class="comparison-sample-cell"><%= concept[:dataset_a_samples].presence || "—" %> <span class="muted">/</span> <%= concept[:dataset_b_samples].presence || "—" %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="empty-state shared-concepts-empty">
+              <strong>No shared normalized concepts</strong>
+              These datasets may still be browsed independently, but the current explicit mappings do not expose common normalized structure.
+            </div>
+          <% end %>
+        </section>
+
+        <section class="dataset-specific-section" aria-labelledby="dataset-specific-heading">
+          <div class="section-heading">
+            <div>
+              <p class="section-label">Dataset-specific concepts</p>
+              <h2 id="dataset-specific-heading">Structure that remains separate</h2>
+            </div>
+            <span class="section-label">No implicit alignment</span>
+          </div>
+
+          <div class="dataset-specific-grid">
+            <% [ [ "Dataset A only", @comparison[:dataset_a_only] ], [ "Dataset B only", @comparison[:dataset_b_only] ] ].each do |label, concepts| %>
+              <section class="dataset-specific-card" aria-labelledby="<%= label.parameterize %>">
+                <h3 id="<%= label.parameterize %>"><%= label %></h3>
+                <% if concepts.any? %>
+                  <ul class="comparison-concept-list">
+                    <% concepts.each do |concept| %>
+                      <li>
+                        <strong><%= concept[:name] %></strong>
+                        <span class="mono"><%= concept[:key] %></span>
+                        <span>Source field: <%= concept[:source_columns].presence || "not recorded" %></span>
+                      </li>
+                    <% end %>
+                  </ul>
+                <% else %>
+                  <div class="empty-state comparison-card-empty">None</div>
+                <% end %>
+              </section>
+            <% end %>
+          </div>
+        </section>
+      <% else %>
+        <div class="empty-state comparison-start-state">
+          <strong>Select two datasets to begin</strong>
+          The comparison will show shared normalized concepts and concepts that remain specific to each dataset.
+        </div>
+      <% end %>
+    </div>
+
+    <aside class="inspector" aria-labelledby="comparison-context-heading">
+      <p class="inspector-label">Comparison boundary</p>
+      <h2 id="comparison-context-heading">Structural only</h2>
+      <dl class="meta-list">
+        <div class="meta-row">
+          <dt>Identity</dt>
+          <dd>Shared concepts are matched by explicit NormalizedConcept identity, never by source column spelling.</dd>
+        </div>
+        <div class="meta-row">
+          <dt>Evidence</dt>
+          <dd>Original source fields, values, and provenance remain in each dataset's imported-record explorer.</dd>
+        </div>
+        <div class="meta-row">
+          <dt>Not performed</dt>
+          <dd>Record matching, coordinate comparison, unit conversion, relationship creation, and ranking.</dd>
+        </div>
+      </dl>
+    </aside>
+  </div>
+</main>

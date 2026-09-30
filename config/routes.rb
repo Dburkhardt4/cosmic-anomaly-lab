@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
   root "home#index"
+  get "datasets/compare", to: "dataset_comparisons#index", as: :compare_datasets
   resources :datasets, except: :destroy do
     resources :imported_records, only: %i[index show], controller: "imported_records"
     resources :source_files, only: %i[create show] do

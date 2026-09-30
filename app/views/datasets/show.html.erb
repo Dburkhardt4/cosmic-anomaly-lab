@@ -9,6 +9,7 @@
     </div>
     <div class="form-actions">
       <%= link_to "All datasets", datasets_path, class: "button button-quiet" %>
+      <%= link_to "Compare datasets", compare_datasets_path(dataset_a_id: @dataset.id), class: "button button-quiet" %>
       <%= link_to "Edit metadata", edit_dataset_path(@dataset), class: "button button-primary" %>
     </div>
   </header>
